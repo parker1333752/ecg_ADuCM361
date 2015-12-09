@@ -10,7 +10,6 @@
 #include "thread_uart.h"
 #include "thread_adc.h"
 #include "thread_led.h"
-#include "thread_acc.h"
 
 typedef struct {
 	osThreadDef_t threadInfo;

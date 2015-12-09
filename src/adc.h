@@ -5,10 +5,10 @@
 #include "DioLib.h"
 #include "AdcLib.h"
 
-extern volatile int32_t AdcValue;
-
 void ECG_init(void);
 void ECG_start_sample(void);
+void ECG_start_continuous(void);
+void HS_start_continuous(void);
 void HS_start_sample(void);
 void ECG_afe_shutdown(void);
 void ECG_afe_start(void);

@@ -434,11 +434,6 @@
               <FileType>1</FileType>
               <FilePath>.\src\threads\thread_adc.c</FilePath>
             </File>
-            <File>
-              <FileName>mpu6050_uart.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\threads\mpu6050_uart.c</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>

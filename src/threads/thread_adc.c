@@ -2,103 +2,136 @@
 #include "thread_uart.h"
 #include "adc.h"
 #include <stdio.h>
+#include "pools.h"
 
 osThreadId tid_Thread_adc;
 osTimerId timerid_adc;
 
 #define TECG_SIGNAL_TIMER  0x02
-#define TIMER_FREQUENCY 	200		// Hz
-
-#define SIG_ADC1_COMPLETE  0x01
+#if defined(GET_ECG_DATA) || defined(GET_HS_DATA)
+	#define TIMER_FREQUENCY 	200		// Hz
+#endif
 
 #define MAX_ECG_ADC_VALUE 0x10000000
+#define ECG_ADC_TO_VOLTAGE 1.2
 #define MAX_HS_ADC_VALUE 0x10000000
+#define HS_ADC_TO_VOLTAGE 2.8
+
+#define Q_ADCVALUE_SIZE 30
+osMessageQDef (Q_ADCVALUE, Q_ADCVALUE_SIZE, uint32_t);
+osMessageQId Q_ADCVALUE;
+_PoolDef(P_ADCVALUE, Q_ADCVALUE_SIZE, AdcValueDef);
 
 #pragma pack(push, 1)
 typedef struct{
 	int32_t date;
 	double ecg_data;
 	double hs_data;
-	MPUDataDef mpudata;
 }EcgDataDef;
 #pragma pack(pop)
+
+enum AdcDataType current_adc_type;
 
 // sampling ECG signal
 void Thread_adc (void const *argument)
 {
+#if !defined(GET_ECG_CONTINUOUS) && !defined(GET_HS_CONTINUOUS) \
+	&& !defined(GET_ECG_DATA) && !defined(GET_HS_DATA)
+#warning "Thread adc didn't work, cause by undefined one of \
+(GET_ECG_CONTINUOUS, GET_HS_CONTINUOUS, GET_ECG_DATA, GET_HS_DATA)
+#endif
+	
 	EcgDataDef ecg_data;
-	int32_t utime;
-	int32_t ms_tickcount;
-	int32_t utime_start;
-	#ifdef GET_MPU_DATA
-		int32_t i;
-		char *ptmp;
-	#endif
-	
-	#ifdef GET_MPU_DATA
-		MPUDataDef *cur_mpu = NULL;
-		MPUDataDef *old_mpu = _PoolGetTop(P_MPUData);
-	#endif
-	
+	int32_t tickcount_start;
+	AdcValueDef *pdata;
+	osEvent os_result;
+
 	ECG_init();
-	Timer0_init(TIMER_FREQUENCY);
-
-	// use to calculate ms from systicks.
-	ms_tickcount = osKernelSysTickFrequency/1000;
+	ecg_data.ecg_data = 0;
+	ecg_data.hs_data = 0;
 	
-	// wait for uart initialize complete.
-	while(flagUartInitComplete == 0)osThreadYield();
+	// Create message queue.
+	Q_ADCVALUE = osMessageCreate(osMessageQ(Q_ADCVALUE), NULL);
 
-	utime_start = osKernelSysTick();
+	#if defined(GET_ECG_CONTINUOUS)
+		ECG_start_continuous();
+		current_adc_type = ecg;
+	#elif defined(GET_HS_CONTINUOUS)
+		HS_start_continuous();
+		current_adc_type = hs;
+	#elif defined(GET_ECG_DATA) || defined(GET_HS_DATA)
+		Timer0_init(TIMER_FREQUENCY);
+	#endif
+
+	// store starting tick count.
+	tickcount_start = getCurrentCount_Timer1();
 	while(1) {
-		//TODO : note that using signal here may cause Signal Lost.
-		osSignalWait(TECG_SIGNAL_TIMER, osWaitForever);
-		utime = osKernelSysTick() - utime_start;
-		utime = (utime + (ms_tickcount>>1)) / ms_tickcount;
-		
-		// set timestamp
-		ecg_data.date = utime;
-		
-		#ifdef GET_ECG_DATA
-			ECG_start_sample();
-			osSignalWait(SIG_ADC1_COMPLETE, osWaitForever);
-			ecg_data.ecg_data = AdcValue;
-			ecg_data.ecg_data /= MAX_ECG_ADC_VALUE;
-		#endif
-
-		#ifdef GET_HS_DATA
-			HS_start_sample();
-			osSignalWait(SIG_ADC1_COMPLETE, osWaitForever);
-			ecg_data.hs_data = AdcValue;
-			ecg_data.hs_data /= MAX_HS_ADC_VALUE;
-		#endif
-
-		#ifdef GET_MPU_DATA
-			cur_mpu = _PoolGetTop(P_MPUData);
-			if(cur_mpu != old_mpu){
-				// receive new data;
-				ptmp = (char*)&(ecg_data.mpudata);
-				for(i=0;i<sizeof(MPUDataDef);++i)*(ptmp+i) = *((char*)(cur_mpu) + i);
-			} else {
-				// no new data;
-				ptmp = (char*)&(ecg_data.mpudata);
-				for(i=0;i<sizeof(MPUDataDef);++i)*(ptmp+i) = 0;
+		os_result = osMessageGet(Q_ADCVALUE, osWaitForever);
+		if(os_result.status == osEventMessage){
+			pdata = (AdcValueDef*)os_result.value.v;
+			ecg_data.date = (pdata->date - tickcount_start);
+			if(pdata->type == ecg){
+				ecg_data.ecg_data = ECG_ADC_TO_VOLTAGE * pdata->adc / MAX_ECG_ADC_VALUE;
+			} else if (pdata->type == hs){
+					ecg_data.hs_data = HS_ADC_TO_VOLTAGE * pdata->adc / MAX_HS_ADC_VALUE;
 			}
-			old_mpu =cur_mpu;
+		}
+		#if defined(GET_ECG_CONTINUOUS) || defined(GET_HS_CONTINUOUS)
+			UART_Write_Frame(0x01, sizeof(EcgDataDef), &ecg_data);
+		#else
+			#if defined(GET_ECG_DATA) && !defined(GET_HS_DATA)
+				if(pdata->type == ecg){
+					UART_Write_Frame(0x01, sizeof(EcgDataDef), &ecg_data);
+				}
+			#elif defined(GET_HS_DATA)
+				if(pdata->type == hs){
+					UART_Write_Frame(0x01, sizeof(EcgDataDef), &ecg_data);
+				}
+			#endif
 		#endif
-
-		// Send as packed data
-		UART_Write_Frame(0x01, sizeof(EcgDataDef), &ecg_data);
 	}
 }
 
 void ADC1_Int_Handler(void)
 {
 	volatile int f_ADCSTA = 0;
+	AdcValueDef *pdata;
+	int32_t data;
 	f_ADCSTA = AdcSta(pADI_ADC1);	// Read ADC status register to clear
 	if(f_ADCSTA & DETSTA_STEPDATRDY){
-		AdcValue = AdcRd(pADI_ADC1);            // Read ADC result register
-		osSignalSet(tid_Thread_adc, SIG_ADC1_COMPLETE);
+		data = AdcRd(pADI_ADC1);            // Read ADC result register
+		pdata = _PoolAlloc(P_ADCVALUE);
+		pdata->adc = data;
+		pdata->date = getCurrentCount_Timer1();
+		pdata->type = current_adc_type;
+		osMessagePut(Q_ADCVALUE, (uint32_t)pdata, 0);
+	}
+}
+
+// Be called when timer update occur.
+void TimerOnInterruptHandler(){
+	static int state = -1;
+	#if defined(GET_ECG_DATA) && defined(GET_HS_DATA)
+		++state;
+		if(state>1) { state = 0; }
+	#elif defined(GET_ECG_DATA)
+		state = 0;
+	#elif defined(GET_HS_DATA)
+		state = 1;
+	#else
+		state = 0xff;
+	#endif
+	switch(state){
+		case 0:
+			ECG_start_sample();
+			current_adc_type = ecg;
+			break;
+		case 1:
+			HS_start_sample();
+			current_adc_type = hs;
+			break;
+		default:
+			break;
 	}
 }
 
@@ -107,7 +140,7 @@ void GP_Tmr0_Int_Handler(void)
 	volatile int flag = GptSta(pADI_TM0);
 	if(flag & TSTA_TMOUT){
 		GptClrInt(pADI_TM0, TCLRI_TMOUT);
-		osSignalSet(tid_Thread_adc , TECG_SIGNAL_TIMER);
+		TimerOnInterruptHandler();
 	}else if(flag & TSTA_CAP){
 		GptClrInt(pADI_TM0, TCLRI_CAP);
 	}

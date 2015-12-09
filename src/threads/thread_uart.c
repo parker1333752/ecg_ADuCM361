@@ -4,68 +4,107 @@
 #include <stdio.h>
 #include "pools.h"
 
-/* Define signal numbers. */
+/* ========== Define Signal Numbers ========================================= */
 #define SIG_UART_SEND_COMPLETE 0x55
 
-/* Define uart write message queue. For storing data that need to send from MCU. */
-#define Q_UartWrite_Size 100
-osMessageQId Q_UartWrite;
-osMessageQDef (Q_UartWrite, Q_UartWrite_Size, uint8_t);
 
-/* Define uart read message queue. For storing data that MCU received. */
-#define Q_UartRead_Size 100
+/* ========== Define Message Queues ========================================= */
+/* Define uart write message queue.
+ * For storing data that need to send from MCU. */
+#define Se_UartWrite_Count 1 // only one uart peripherals.
+osSemaphoreId Se_UartWrite;
+osSemaphoreDef (Se_UartWrite);
+#define UartWriteQueueSize 2000
+typedef struct {
+	uint8_t data[UartWriteQueueSize];
+	int front;
+	int rear;
+}MqueueDef;
+MqueueDef __UartWriteQueue;
+MqueueDef* const UartWriteQueue = &__UartWriteQueue;
+void initQ(MqueueDef* const th){
+	th->front = th->rear = 0;
+}
+void pushQ(MqueueDef* const th, uint8_t data){
+	th->data[th->rear++] = data;
+	if(th->rear >= UartWriteQueueSize)th->rear = 0;
+	// Discards oldest data;
+	if(th->rear == th->front)th->front = (th->front+1)%UartWriteQueueSize;
+}
+uint8_t popQ(MqueueDef* const th){
+	uint8_t rt = th->data[th->front++];
+	if(th->front >= UartWriteQueueSize)th->front = 0;
+	return rt;
+}
+int emptyQ(MqueueDef* const th){
+	return (th->front == th->rear);
+}
+
+/* Define uart read message queue. Used for transform MPU data. */
+#define Q_UartRead_Size 30
 osMessageQId Q_UartRead;
-osMessageQDef (Q_UartRead, Q_UartRead_Size, uint8_t);
+osMessageQDef (Q_UartRead, Q_UartRead_Size, uint32_t);
 
+/* ========== Define variable pools ========================================= */
 /* Define Pool for usage of MPU data queue. */
-#define P_MPUData_Size 10
-_PoolDef(P_MPUData, P_MPUData_Size, MPUDataDef);
+_PoolDef(P_MPUData, Q_UartRead_Size, MPUDataDef);
 
+/* ========== Define thread ids ============================================= */
 osThreadId tid_Thread_uart;
-
 osThreadId tid_Thread_uart_send;
+
+/* Definition of Uart send thread. This thread will create in Thread_uart. */
+void Thread_uart_send (void const*);
 osThreadDef_t ThreadDef_uart_send = {Thread_uart_send, osPriorityNormal, 1, 0};
 
+/* ========== Define Global variables ======================================= */
+/* For test if uart init complete,
+ * prevent calling uart send before initialization completed. */
 char flagUartInitComplete = 0;
 
+/* ========== Define Global Functions ======================================= */
+// Declare status machine for uart read data process.
 int status_machine(int status, uint8_t data, MPUDataDef **pmpu);
 
-// Receive and process uart data.
+/* Thread funcion for uart data reading and processing.
+ * Use message for getting data from uart read (after status machine),
+ * and send this data to PC.
+ */
 void Thread_uart (void const *argument) {
-	uint8_t data;
 	osEvent os_result;
-	int mpu_status = 0;
 	MPUDataDef *pmpu = NULL;
+	int32_t tickcount_start;
 
-	// Configure peripherals.
+	// Configure uart peripheral.
 	UART_init();
-	
+
 	// Create message queue
-	Q_UartWrite = osMessageCreate(osMessageQ(Q_UartWrite), NULL);
 	Q_UartRead = osMessageCreate(osMessageQ(Q_UartRead), NULL);
+	
+	// Create semaphoreCreate for uart write queue
+	Se_UartWrite = osSemaphoreCreate(osSemaphore(Se_UartWrite), Se_UartWrite_Count);
+	initQ(UartWriteQueue);
 
 	// create thread uart send
 	tid_Thread_uart_send = osThreadCreate(&ThreadDef_uart_send, NULL);
 
 	// Tell other threads that initialization complete.
 	flagUartInitComplete = 1;
-	
-	while(1) {
-		// Wait for receiving uart data.
-		os_result = osMessageGet(Q_UartRead, osWaitForever);
-		data = os_result.value.v;
 
+	tickcount_start = getCurrentCount_Timer1();
+	while(1) {
+		os_result = osMessageGet(Q_UartRead, osWaitForever);
 		if(os_result.status == osEventMessage){
-			// TODO: process data...
-			if((mpu_status = status_machine(mpu_status, data, &pmpu)) == 0xff){
-				_PoolInc(P_MPUData);
-				pmpu = NULL;
-				mpu_status = 0;
-			}
+			pmpu = (MPUDataDef*)os_result.value.v;
+			pmpu->date -= tickcount_start;
+			UART_Write_Frame(0x02, sizeof(MPUDataDef), pmpu);
 		}
 	}
 }
 
+/* Status machine for receiving MPU6050 module's data.
+ * If return value is 0xff, means that a complete frame received.
+ */
 int status_machine(int status, uint8_t data, MPUDataDef **rt_pmpu){
 	static uint8_t s[10];
 	static int s_top = 0;
@@ -108,6 +147,7 @@ int status_machine(int status, uint8_t data, MPUDataDef **rt_pmpu){
 				pmpu->anglex = *(int16_t*)(s+0);
 				pmpu->angley = *(int16_t*)(s+2);
 				pmpu->anglez = *(int16_t*)(s+4);
+				pmpu->date = getCurrentCount_Timer1();
 				status = 0xff;
 			}else status = 0; // status error.
 		}
@@ -133,37 +173,44 @@ int status_machine(int status, uint8_t data, MPUDataDef **rt_pmpu){
 void package_and_write(uint8_t ch){
 #ifdef USE_PACKAGE
 	if(ch == PACKAGE_ESC){
-		osMessagePut(Q_UartWrite, PACKAGE_ESC, osWaitForever);
-		osMessagePut(Q_UartWrite, PACKAGE_E_ESC, osWaitForever);
+		pushQ(UartWriteQueue, PACKAGE_ESC);
+		pushQ(UartWriteQueue, PACKAGE_E_ESC);
 	}else if(ch == PACKAGE_START){
-		osMessagePut(Q_UartWrite, PACKAGE_ESC, osWaitForever);
-		osMessagePut(Q_UartWrite, PACKAGE_E_START, osWaitForever);
+		pushQ(UartWriteQueue, PACKAGE_ESC);
+		pushQ(UartWriteQueue, PACKAGE_E_START);
 	}else if(ch == PACKAGE_END){
-		osMessagePut(Q_UartWrite, PACKAGE_ESC, osWaitForever);
-		osMessagePut(Q_UartWrite, PACKAGE_E_END, osWaitForever);
+		pushQ(UartWriteQueue, PACKAGE_ESC);
+		pushQ(UartWriteQueue, PACKAGE_E_END);
 	}else if(ch == PACKAGE_X1){
-		osMessagePut(Q_UartWrite, PACKAGE_ESC, osWaitForever);
-		osMessagePut(Q_UartWrite, PACKAGE_E_X1, osWaitForever);
+		pushQ(UartWriteQueue, PACKAGE_ESC);
+		pushQ(UartWriteQueue, PACKAGE_E_X1);
 	}else if(ch == PACKAGE_X2){
-		osMessagePut(Q_UartWrite, PACKAGE_ESC, osWaitForever);
-		osMessagePut(Q_UartWrite, PACKAGE_E_X2, osWaitForever);
+		pushQ(UartWriteQueue, PACKAGE_ESC);
+		pushQ(UartWriteQueue, PACKAGE_E_X2);
 	}else{
-		osMessagePut(Q_UartWrite, ch, osWaitForever);
+		pushQ(UartWriteQueue, ch);
 	}
 #else
-	osMessagePut(Q_UartWrite, ch, osWaitForever);
+	push(UartWriteQueue, ch);
 #endif
 }
 
-// Called by any thread, for sending TLV frame. 
+// Called by any thread, for sending TLV frame.
 // If definded USE_PACAGE, data will be packaged.
 void UART_Write_Frame(uint8_t tag, uint16_t length, void* value)
 {
 	uint8_t temp,i;
-	const uint8_t* p = value;
+	uint8_t* p = value;
 	uint8_t sumcheck = 0;
+
+	/* discards data before uart init completed. */
+	if (flagUartInitComplete == 0) return;
+	
+	// Wait for queue available;
+	osSemaphoreWait(Se_UartWrite, osWaitForever);
+
 	#ifdef USE_PACKAGE
-		osMessagePut(Q_UartWrite, PACKAGE_START, osWaitForever);
+		pushQ(UartWriteQueue, PACKAGE_START);
 	#endif
 	// Tag
 	package_and_write(tag);
@@ -180,21 +227,20 @@ void UART_Write_Frame(uint8_t tag, uint16_t length, void* value)
 	// Sum check
 	package_and_write(sumcheck);
 	#ifdef USE_PACKAGE
-		osMessagePut(Q_UartWrite, PACKAGE_END, osWaitForever);
+		pushQ(UartWriteQueue, PACKAGE_END);
 	#endif
+	
+	// release Uart Queue lock;
+	osSemaphoreRelease(Se_UartWrite);
 }
 
 void Thread_uart_send (void const *argument) {
 	uint8_t data;
-	osEvent os_result;
-	
-	// Wait for uart initialize complete.
-	while(flagUartInitComplete == 0)osThreadYield();
 
 	while(1) {
-		os_result = osMessageGet(Q_UartWrite, osWaitForever);
-		if(os_result.status == osEventMessage){
-			data = os_result.value.v;
+		if(emptyQ(UartWriteQueue))osThreadYield();
+		else {
+			data = popQ(UartWriteQueue);
 			UrtTx(pADI_UART, data);
 			osSignalWait(SIG_UART_SEND_COMPLETE, osWaitForever);
 		}
@@ -205,20 +251,19 @@ void UART_Int_Handler(void)
 {
 	int flag = UrtIntSta(pADI_UART);
 	uint8_t data;
-	volatile static uint8_t a[40];
-	volatile static int point = 0;
-	if((flag & COMIIR_NINT) != 0) return; 
-	if((flag & COMIIR_STA_MSK) == COMIIR_STA_RXBUFFULL){ 
-		// uart receive interrupt
+	static int mpu_status = 0;
+	static MPUDataDef *mpu_data = NULL;
+	if((flag & COMIIR_NINT) != 0) return;
+	if((flag & COMIIR_STA_MSK) == COMIIR_STA_RXBUFFULL){
+		/* uart receive interrupt */
 		data = UART_read();
-		a[point++] = data;
-		//TODO: check if it's needed to change parameter "millisec" to 0.
-		osMessagePut(Q_UartRead , data , 0);
-		if(point>=40){
-			point=0;
+		if ( (mpu_status=status_machine(mpu_status, data, &mpu_data)) == 0xff){
+			osMessagePut(Q_UartRead, (uint32_t)mpu_data, 0);
+			mpu_data = NULL;
+			mpu_status = 0;
 		}
-	} else if((flag & COMIIR_STA_MSK) == COMIIR_STA_TXBUFEMPTY){ 
-		// uart send complete interrupt
+	} else if((flag & COMIIR_STA_MSK) == COMIIR_STA_TXBUFEMPTY){
+		/* uart send complete interrupt */
 		osSignalSet(tid_Thread_uart_send,SIG_UART_SEND_COMPLETE);
 	}
 }

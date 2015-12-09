@@ -8,12 +8,15 @@ osThreadId tid_Thread_led;
 // for led test
 void Thread_led (void const *argument) {
 	int a = 0;
-	int t = 0;
+	uint32_t t = 0;
 	int temp = 0;
+	const uint32_t period = osKernelSysTickFrequency*2;
+	const uint32_t tick = period / 200;
 	
 	LED_init();
 	
 	while (1) {
+		/*
 		a += 1;
 		if(a>=200){
 			a=0;
@@ -28,5 +31,12 @@ void Thread_led (void const *argument) {
 		osDelay(15-t);
 		LED_on(LED1);
 		osDelay(t);
-  }
+		*/
+		t = osKernelSysTick();
+		t %= (period);
+		t /= osKernelSysTickFrequency;
+		if(t ==  0)LED_off(LED1);
+		else LED_on(LED1);
+		osThreadYield();
+	}
 }

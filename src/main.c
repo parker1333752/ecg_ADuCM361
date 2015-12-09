@@ -1,4 +1,5 @@
 #include <main.h>
+#include <timer.h>
 
 /**
  * ThreadDeclare.
@@ -17,7 +18,11 @@ int main (void) {
     osKernelInitialize ();
 	
     // Enable all clocks. 
+	ClkCfg(CLK_CD0, CLK_HF, CLKSYSDIV_DIV2EN_DIS, CLK_UCLKCG);
 	ClkDis(0);
+	
+	// Addictional peripherals initialization.
+	Timer1_init(10000);
 	
 	// Create threads.
 	list_len = sizeof(thread_list) / sizeof(ThreadDeclare);
