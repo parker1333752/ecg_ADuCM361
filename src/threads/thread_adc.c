@@ -3,6 +3,7 @@
 #include "adc.h"
 #include <stdio.h>
 #include "pools.h"
+#include "AdcLib.h"
 
 osThreadId tid_Thread_adc;
 osTimerId timerid_adc;
@@ -25,8 +26,8 @@ _PoolDef(P_ADCVALUE, Q_ADCVALUE_SIZE, AdcValueDef);
 #pragma pack(push, 1)
 typedef struct{
 	int32_t date;
-	double ecg_data;
-	double hs_data;
+	int32_t ecg_data;
+	int32_t hs_data;
 }EcgDataDef;
 #pragma pack(pop)
 
@@ -71,9 +72,11 @@ void Thread_adc (void const *argument)
 			pdata = (AdcValueDef*)os_result.value.v;
 			ecg_data.date = (pdata->date - tickcount_start);
 			if(pdata->type == ecg){
-				ecg_data.ecg_data = ECG_ADC_TO_VOLTAGE * pdata->adc / MAX_ECG_ADC_VALUE;
+				//ecg_data.ecg_data = ECG_ADC_TO_VOLTAGE * pdata->adc / MAX_ECG_ADC_VALUE;
+				ecg_data.ecg_data = pdata->adc;
 			} else if (pdata->type == hs){
-					ecg_data.hs_data = HS_ADC_TO_VOLTAGE * pdata->adc / MAX_HS_ADC_VALUE;
+				//ecg_data.hs_data = HS_ADC_TO_VOLTAGE * pdata->adc / MAX_HS_ADC_VALUE;
+				ecg_data.hs_data = pdata->adc;
 			}
 		}
 		#if defined(GET_ECG_CONTINUOUS) || defined(GET_HS_CONTINUOUS)

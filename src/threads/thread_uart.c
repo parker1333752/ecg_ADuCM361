@@ -97,7 +97,9 @@ void Thread_uart (void const *argument) {
 		if(os_result.status == osEventMessage){
 			pmpu = (MPUDataDef*)os_result.value.v;
 			pmpu->date -= tickcount_start;
+			#ifdef GET_MPU_DATA
 			UART_Write_Frame(0x02, sizeof(MPUDataDef), pmpu);
+			#endif
 		}
 	}
 }

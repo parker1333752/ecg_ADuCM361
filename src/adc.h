@@ -2,8 +2,6 @@
 #define __ADC_HAL_H__
 
 #include "ADUCM360.h"
-#include "DioLib.h"
-#include "AdcLib.h"
 
 void ECG_init(void);
 void ECG_start_sample(void);

@@ -5,6 +5,8 @@
 #include "pools.h"
 #include "timer.h"
 
+//#define GET_MPU_DATA
+
 extern osThreadId tid_Thread_uart;
 
 #pragma pack(push, 1)

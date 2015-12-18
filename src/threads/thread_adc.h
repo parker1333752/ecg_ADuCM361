@@ -5,7 +5,7 @@
 #include "timer.h"
 
 //#define GET_ECG_CONTINUOUS
-//#define GET_HS_CONTINUOUS
+#define GET_HS_CONTINUOUS
 
 #if !defined(GET_ECG_CONTINUOUS) && !defined(GET_HS_CONTINUOUS)
 #define GET_ECG_DATA
