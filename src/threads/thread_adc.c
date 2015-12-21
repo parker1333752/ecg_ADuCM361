@@ -5,34 +5,35 @@
 #include "pools.h"
 #include "AdcLib.h"
 
-osThreadId tid_Thread_adc;
-osTimerId timerid_adc;
+//#define GET_ECG_CONTINUOUS
+#define GET_HS_CONTINUOUS
 
-#define TECG_SIGNAL_TIMER  0x02
-#if defined(GET_ECG_DATA) || defined(GET_HS_DATA)
-	#define TIMER_FREQUENCY 	200		// Hz
+#if !defined(GET_ECG_CONTINUOUS) && !defined(GET_HS_CONTINUOUS)
+#define GET_ECG_DATA
+#define GET_HS_DATA
 #endif
 
-#define MAX_ECG_ADC_VALUE 0x10000000
-#define ECG_ADC_TO_VOLTAGE 1.2
-#define MAX_HS_ADC_VALUE 0x10000000
-#define HS_ADC_TO_VOLTAGE 2.8
+osThreadId tid_Thread_adc;
+//osTimerId timerid_adc;
+
+//#define TECG_SIGNAL_TIMER  0x02
+//#if defined(GET_ECG_DATA) || defined(GET_HS_DATA)
+//	#define TIMER_FREQUENCY 	200		// Hz
+//#endif
+
+//#define MAX_ECG_ADC_VALUE 0x10000000
+//#define ECG_ADC_TO_VOLTAGE 1.2
+//#define MAX_HS_ADC_VALUE 0x10000000
+//#define HS_ADC_TO_VOLTAGE 2.8
 
 #define Q_ADCVALUE_SIZE 30
 osMessageQDef (Q_ADCVALUE, Q_ADCVALUE_SIZE, uint32_t);
 osMessageQId Q_ADCVALUE;
 _PoolDef(P_ADCVALUE, Q_ADCVALUE_SIZE, AdcValueDef);
 
-#pragma pack(push, 1)
-typedef struct{
-	int32_t date;
-	int32_t ecg_data;
-	int32_t hs_data;
-}EcgDataDef;
-#pragma pack(pop)
+static const enum AdcDataType current_adc_type = hs;
 
-enum AdcDataType current_adc_type;
-
+EcgDataDef ecg_data;
 // sampling ECG signal
 void Thread_adc (void const *argument)
 {
@@ -42,27 +43,26 @@ void Thread_adc (void const *argument)
 (GET_ECG_CONTINUOUS, GET_HS_CONTINUOUS, GET_ECG_DATA, GET_HS_DATA)
 #endif
 	
-	EcgDataDef ecg_data;
 	int32_t tickcount_start;
 	AdcValueDef *pdata;
 	osEvent os_result;
 
-	ECG_init();
+	ADC1_init();
 	ecg_data.ecg_data = 0;
 	ecg_data.hs_data = 0;
 	
 	// Create message queue.
 	Q_ADCVALUE = osMessageCreate(osMessageQ(Q_ADCVALUE), NULL);
 
-	#if defined(GET_ECG_CONTINUOUS)
-		ECG_start_continuous();
-		current_adc_type = ecg;
-	#elif defined(GET_HS_CONTINUOUS)
-		HS_start_continuous();
-		current_adc_type = hs;
-	#elif defined(GET_ECG_DATA) || defined(GET_HS_DATA)
-		Timer0_init(TIMER_FREQUENCY);
-	#endif
+//	#if defined(GET_ECG_CONTINUOUS)
+//		ECG_start_continuous();
+//		current_adc_type = ecg;
+//	#elif defined(GET_HS_CONTINUOUS)
+//		HS_start_continuous();
+//		current_adc_type = hs;
+//	#elif defined(GET_ECG_DATA) || defined(GET_HS_DATA)
+//		Timer0_init(TIMER_FREQUENCY);
+//	#endif
 
 	// store starting tick count.
 	tickcount_start = getCurrentCount_Timer1();
@@ -111,40 +111,40 @@ void ADC1_Int_Handler(void)
 	}
 }
 
-// Be called when timer update occur.
-void TimerOnInterruptHandler(){
-	static int state = -1;
-	#if defined(GET_ECG_DATA) && defined(GET_HS_DATA)
-		++state;
-		if(state>1) { state = 0; }
-	#elif defined(GET_ECG_DATA)
-		state = 0;
-	#elif defined(GET_HS_DATA)
-		state = 1;
-	#else
-		state = 0xff;
-	#endif
-	switch(state){
-		case 0:
-			ECG_start_sample();
-			current_adc_type = ecg;
-			break;
-		case 1:
-			HS_start_sample();
-			current_adc_type = hs;
-			break;
-		default:
-			break;
-	}
-}
+//// Be called when timer update occur.
+//void TimerOnInterruptHandler(){
+//	static int state = -1;
+//	#if defined(GET_ECG_DATA) && defined(GET_HS_DATA)
+//		++state;
+//		if(state>1) { state = 0; }
+//	#elif defined(GET_ECG_DATA)
+//		state = 0;
+//	#elif defined(GET_HS_DATA)
+//		state = 1;
+//	#else
+//		state = 0xff;
+//	#endif
+//	switch(state){
+//		case 0:
+//			ECG_start_sample();
+//			current_adc_type = ecg;
+//			break;
+//		case 1:
+//			HS_start_sample();
+//			current_adc_type = hs;
+//			break;
+//		default:
+//			break;
+//	}
+//}
 
-void GP_Tmr0_Int_Handler(void)
-{
-	volatile int flag = GptSta(pADI_TM0);
-	if(flag & TSTA_TMOUT){
-		GptClrInt(pADI_TM0, TCLRI_TMOUT);
-		TimerOnInterruptHandler();
-	}else if(flag & TSTA_CAP){
-		GptClrInt(pADI_TM0, TCLRI_CAP);
-	}
-}
+//void GP_Tmr0_Int_Handler(void)
+//{
+//	volatile int flag = GptSta(pADI_TM0);
+//	if(flag & TSTA_TMOUT){
+//		GptClrInt(pADI_TM0, TCLRI_TMOUT);
+//		TimerOnInterruptHandler();
+//	}else if(flag & TSTA_CAP){
+//		GptClrInt(pADI_TM0, TCLRI_CAP);
+//	}
+//}

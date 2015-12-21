@@ -1,12 +1,18 @@
 #include <main.h>
 #include <timer.h>
 
+#include "thread_uart.h"
+#include "thread_adc.h"
+#include "thread_adc0.h"
+#include "thread_led.h"
+
 /**
  * ThreadDeclare.
  * A list store the threads that need to run.
  */
 const ThreadDeclare thread_list[] = {
 	{{Thread_adc, osPriorityNormal, 1, 0}, &tid_Thread_adc, NULL},
+//	{{Thread_adc0, osPriorityNormal, 1, 0}, &tid_Thread_adc0, NULL},
 	{{Thread_uart, osPriorityNormal, 1, 0}, &tid_Thread_uart, NULL},
 	{{Thread_led, osPriorityNormal, 1, 0}, &tid_Thread_led, NULL},
 };

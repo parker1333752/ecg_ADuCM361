@@ -3,12 +3,12 @@
 
 #include "ADUCM360.h"
 
-void ECG_init(void);
-void ECG_start_sample(void);
-void ECG_start_continuous(void);
+void ADC1_init(void);
+//void ECG_start_sample(void);
+//void ECG_start_continuous(void);
 void HS_start_continuous(void);
 void HS_start_sample(void);
-void ECG_afe_shutdown(void);
-void ECG_afe_start(void);
+//void ECG_afe_shutdown(void);
+//void ECG_afe_start(void);
 
 #endif

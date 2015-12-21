@@ -7,10 +7,6 @@
 #include "stdio.h"
 #include "retarget.h"
 
-#include "thread_uart.h"
-#include "thread_adc.h"
-#include "thread_led.h"
-
 typedef struct {
 	osThreadDef_t threadInfo;
 	osThreadId *tid;
