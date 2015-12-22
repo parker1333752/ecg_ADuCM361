@@ -12,14 +12,14 @@
       <ToolsetName>ARM-ADS</ToolsetName>
       <TargetOption>
         <TargetCommonOption>
-          <Device>ADuCM361</Device>
+          <Device>ADuCM360</Device>
           <Vendor>Analog Devices</Vendor>
           <Cpu>IROM(0x00000000,0x20000) IRAM(0x20000000,0x2000) CPUTYPE("Cortex-M3") CLOCK(16000000) ELITTLE</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
           <StartupFile></StartupFile>
-          <FlashDriverDll>UL2CM3(-S0 -C0 -P0 -FD20000000 -FC800 -FN1 -FF0ADUCMxxx_128 -FS00 -FL020000 -FP0($$Device:ADuCM361$Flash\ADUCMxxx_128.FLM))</FlashDriverDll>
-          <DeviceId>6780</DeviceId>
-          <RegisterFile>$$Device:ADuCM361$Device\Include\ADuCM361.h</RegisterFile>
+          <FlashDriverDll>UL2CM3(-S0 -C0 -P0 -FD20000000 -FC800 -FN1 -FF0ADUCMxxx_128 -FS00 -FL020000 -FP0($$Device:ADuCM360$Flash\ADUCMxxx_128.FLM))</FlashDriverDll>
+          <DeviceId>6554</DeviceId>
+          <RegisterFile>$$Device:ADuCM360$Device\Include\ADuCM360.h</RegisterFile>
           <MemoryEnv></MemoryEnv>
           <Cmp></Cmp>
           <Asm></Asm>
@@ -29,7 +29,7 @@
           <SLE66CMisc></SLE66CMisc>
           <SLE66AMisc></SLE66AMisc>
           <SLE66LinkerMisc></SLE66LinkerMisc>
-          <SFDFile>$$Device:ADuCM361$SVD\ADuCM361.svd</SFDFile>
+          <SFDFile>$$Device:ADuCM360$SVD\ADuCM360.svd</SFDFile>
           <bCustSvd>0</bCustSvd>
           <UseEnv>0</UseEnv>
           <BinPath></BinPath>
@@ -166,12 +166,12 @@
             <UseExternalTool>0</UseExternalTool>
             <RunIndependent>0</RunIndependent>
             <UpdateFlashBeforeDebugging>1</UpdateFlashBeforeDebugging>
-            <Capability>0</Capability>
-            <DriverSelection>-1</DriverSelection>
+            <Capability>1</Capability>
+            <DriverSelection>4096</DriverSelection>
           </Flash1>
           <bUseTDR>1</bUseTDR>
           <Flash2>BIN\UL2CM3.DLL</Flash2>
-          <Flash3></Flash3>
+          <Flash3>"" ()</Flash3>
           <Flash4></Flash4>
           <pFcarmOut></pFcarmOut>
           <pFcarmGrp></pFcarmGrp>
@@ -434,6 +434,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\threads\thread_adc.c</FilePath>
             </File>
+            <File>
+              <FileName>thread_adc0.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\threads\thread_adc0.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -463,6 +468,11 @@
               <FileName>i2c.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\i2c.c</FilePath>
+            </File>
+            <File>
+              <FileName>adc0.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\adc0.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -575,14 +585,14 @@
           <GroupName>::Device</GroupName>
           <Files>
             <File>
-              <FileName>startup_ADuCM361.s</FileName>
+              <FileName>startup_ADuCM360.s</FileName>
               <FileType>2</FileType>
-              <FilePath>RTE\Device\ADuCM361\startup_ADuCM361.s</FilePath>
+              <FilePath>RTE\Device\ADuCM360\startup_ADuCM360.s</FilePath>
             </File>
             <File>
-              <FileName>system_ADuCM361.c</FileName>
+              <FileName>system_ADuCM360.c</FileName>
               <FileType>1</FileType>
-              <FilePath>RTE\Device\ADuCM361\system_ADuCM361.c</FilePath>
+              <FilePath>RTE\Device\ADuCM360\system_ADuCM360.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -592,7 +602,7 @@
 
   <RTE>
     <apis>
-      <api Capiversion="1.0" Cclass="CMSIS" Cgroup="RTOS" Cvendor="ARM" exclusive="0">
+      <api Capiversion="1.0" Cclass="CMSIS" Cgroup="RTOS" exclusive="0">
         <package name="CMSIS" schemaVersion="1.0" url="http://www.keil.com/pack/" vendor="ARM" version="3.20.4"/>
         <targetInfos>
           <targetInfo name="Version1.0"/>
@@ -628,21 +638,33 @@
           <targetInfo name="Version1.0"/>
         </targetInfos>
       </file>
-      <file attr="config" category="source" condition="ADuCM361_ARM" name="Device\Source\startup_ADuCM361.s" version="1.0.0">
-        <instance index="0">RTE\Device\ADuCM361\startup_ADuCM361.s</instance>
+      <file attr="config" category="source" condition="ADuCM360_ARM" name="Device\Source\startup_ADuCM360.s" version="1.0.0">
+        <instance index="0">RTE\Device\ADuCM360\startup_ADuCM360.s</instance>
         <component Cclass="Device" Cgroup="Startup" Cvendor="AnalogDevices" Cversion="1.0.0" condition="ADuCM36x CMSIS Device"/>
         <package license="License\License.txt" name="ADuCM36x_DFP" schemaVersion="1.2" supportContact="http://www.analog.com/en/content/technical_support_page/fca.html" url="http://www.analog.com/static/imported-files/design_tools" vendor="AnalogDevices" version="1.0.0"/>
         <targetInfos>
           <targetInfo name="Version1.0"/>
         </targetInfos>
       </file>
-      <file attr="config" category="source" condition="ADuCM361" name="Device\Source\system_ADuCM361.c" version="1.0.0">
-        <instance index="0">RTE\Device\ADuCM361\system_ADuCM361.c</instance>
+      <file attr="config" category="source" condition="ADuCM360" name="Device\Source\system_ADuCM360.c" version="1.0.0">
+        <instance index="0">RTE\Device\ADuCM360\system_ADuCM360.c</instance>
         <component Cclass="Device" Cgroup="Startup" Cvendor="AnalogDevices" Cversion="1.0.0" condition="ADuCM36x CMSIS Device"/>
         <package license="License\License.txt" name="ADuCM36x_DFP" schemaVersion="1.2" supportContact="http://www.analog.com/en/content/technical_support_page/fca.html" url="http://www.analog.com/static/imported-files/design_tools" vendor="AnalogDevices" version="1.0.0"/>
         <targetInfos>
           <targetInfo name="Version1.0"/>
         </targetInfos>
+      </file>
+      <file attr="config" category="source" condition="ADuCM361_ARM" name="Device\Source\startup_ADuCM361.s" version="1.0.0">
+        <instance index="0" removed="1">RTE\Device\ADuCM361\startup_ADuCM361.s</instance>
+        <component Cclass="Device" Cgroup="Startup" Cvendor="AnalogDevices" Cversion="1.0.0" condition="ADuCM36x CMSIS Device"/>
+        <package license="License\License.txt" name="ADuCM36x_DFP" schemaVersion="1.2" supportContact="http://www.analog.com/en/content/technical_support_page/fca.html" url="http://www.analog.com/static/imported-files/design_tools" vendor="AnalogDevices" version="1.0.0"/>
+        <targetInfos/>
+      </file>
+      <file attr="config" category="source" condition="ADuCM361" name="Device\Source\system_ADuCM361.c" version="1.0.0">
+        <instance index="0" removed="1">RTE\Device\ADuCM361\system_ADuCM361.c</instance>
+        <component Cclass="Device" Cgroup="Startup" Cvendor="AnalogDevices" Cversion="1.0.0" condition="ADuCM36x CMSIS Device"/>
+        <package license="License\License.txt" name="ADuCM36x_DFP" schemaVersion="1.2" supportContact="http://www.analog.com/en/content/technical_support_page/fca.html" url="http://www.analog.com/static/imported-files/design_tools" vendor="AnalogDevices" version="1.0.0"/>
+        <targetInfos/>
       </file>
     </files>
   </RTE>
