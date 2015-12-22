@@ -12,7 +12,7 @@
  */
 const ThreadDeclare thread_list[] = {
 	{{Thread_adc, osPriorityNormal, 1, 0}, &tid_Thread_adc, NULL},
-//	{{Thread_adc0, osPriorityNormal, 1, 0}, &tid_Thread_adc0, NULL},
+	{{Thread_adc0, osPriorityNormal, 1, 0}, &tid_Thread_adc0, NULL},
 	{{Thread_uart, osPriorityNormal, 1, 0}, &tid_Thread_uart, NULL},
 	{{Thread_led, osPriorityNormal, 1, 0}, &tid_Thread_led, NULL},
 };

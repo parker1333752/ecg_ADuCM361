@@ -2,15 +2,6 @@
 #define __THREAD_ADC__
 
 #include <cmsis_os.h>
-#include "timer.h"
-
-//#define GET_ECG_CONTINUOUS
-#define GET_HS_CONTINUOUS
-
-#if !defined(GET_ECG_CONTINUOUS) && !defined(GET_HS_CONTINUOUS)
-#define GET_ECG_DATA
-#define GET_HS_DATA
-#endif
 
 /* store data capture in adc interrupt; */
 enum AdcDataType{ 

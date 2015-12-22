@@ -10,8 +10,8 @@ void Thread_led (void const *argument) {
 	int a = 0;
 	uint32_t t = 0;
 	int temp = 0;
-	const uint32_t period = osKernelSysTickFrequency*2;
-	const uint32_t tick = period / 200;
+//	const uint32_t period = osKernelSysTickFrequency*2;
+//	const uint32_t tick = period / 200;
 	
 	LED_init();
 	
