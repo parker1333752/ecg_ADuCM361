@@ -36,6 +36,8 @@ uint8_t popQ(MqueueDef* const th){
 	if(th->front >= UartWriteQueueSize)th->front = 0;
 	return rt;
 }
+volatile uint8_t UartTxStopped;
+
 int emptyQ(MqueueDef* const th){
 	return (th->front == th->rear);
 }
@@ -90,8 +92,8 @@ void Thread_uart (void const *argument) {
 
 	// Tell other threads that initialization complete.
 	flagUartInitComplete = 1;
-
 	tickcount_start = getCurrentCount_Timer1();
+
 	while(1) {
 		os_result = osMessageGet(Q_UartRead, osWaitForever);
 		if(os_result.status == osEventMessage){
@@ -114,19 +116,19 @@ int status_machine(int status, uint8_t data, MPUDataDef **rt_pmpu){
 	uint8_t sum;
 	if(status == 0){ // idle
 		if(data == 0x55)status = 1;
-	}else if(status == 1){ // received first byte;
-		if(data == 0x51){
+	} else if(status == 1) { // received first byte;
+		if (data == 0x51) {
 			s_top = 0;status = 2; // acc
-		}else if(data == 0x52){
+		} else if (data == 0x52) {
 			s_top = 0;status = 3; // omega
-		}else if(data == 0x53){
+		} else if (data == 0x53) {
 			s_top = 0;status = 4; // angle
-		}else{ status = 0; } // error status.
-	}else if(status == 2 || status == 3 || status == 4){ // receive data
+		} else{ status = 0; } // error status.
+	} else if(status == 2 || status == 3 || status == 4) { // receive data
 		if(s_top < 9){
 			s[s_top++] = data;
 		}else status += 100;
-	}else if(status > 100){
+	} else if(status > 100) {
 		status = status - 101 + 0x50;
 		sum = 0xff & status;
 		sum += 0x55;
@@ -238,13 +240,15 @@ void UART_Write_Frame(uint8_t tag, uint16_t length, void* value)
 
 void Thread_uart_send (void const *argument) {
 	uint8_t data;
-
+	UartTxStopped=1;
 	while(1) {
 		if(emptyQ(UartWriteQueue))osThreadYield();
 		else {
-			data = popQ(UartWriteQueue);
-			UrtTx(pADI_UART, data);
-			osSignalWait(SIG_UART_SEND_COMPLETE, osWaitForever);
+			if(UartTxStopped==1){
+				UartTxStopped=0;
+				data = popQ(UartWriteQueue);
+				UrtTx(pADI_UART, data);
+			}
 		}
 	}
 }
@@ -266,6 +270,11 @@ void UART_Int_Handler(void)
 		}
 	} else if((flag & COMIIR_STA_MSK) == COMIIR_STA_TXBUFEMPTY){
 		/* uart send complete interrupt */
-		osSignalSet(tid_Thread_uart_send,SIG_UART_SEND_COMPLETE);
+		if(emptyQ(UartWriteQueue)){
+			UartTxStopped=1;
+		}else{
+			data = popQ(UartWriteQueue);
+			UrtTx(pADI_UART, data);
+		}
 	}
 }

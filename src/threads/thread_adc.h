@@ -18,6 +18,12 @@ typedef struct{
 	int32_t date;
 	int32_t ecg_data;
 	int32_t hs_data;
+	int16_t Accelerometer_X; /*!< Accelerometer value X axis */
+	int16_t Accelerometer_Y; /*!< Accelerometer value Y axis */
+	int16_t Accelerometer_Z; /*!< Accelerometer value Z axis */
+	int16_t Gyroscope_X;     /*!< Gyroscope value X axis */
+	int16_t Gyroscope_Y;     /*!< Gyroscope value Y axis */
+	int16_t Gyroscope_Z;     /*!< Gyroscope value Z axis */
 }EcgDataDef;
 #pragma pack(pop)
 

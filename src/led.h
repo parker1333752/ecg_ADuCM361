@@ -17,5 +17,6 @@ void LED_init(void);
 void LED_reset(void);
 void LED_on(uint8_t LEDx);
 void LED_off(uint8_t LEDx);
+void LED_toggle(uint8_t LEDx);
 
 #endif

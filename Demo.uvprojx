@@ -439,6 +439,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\threads\thread_adc0.c</FilePath>
             </File>
+            <File>
+              <FileName>thread_i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\threads\thread_i2c.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -473,6 +478,11 @@
               <FileName>adc0.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\adc0.c</FilePath>
+            </File>
+            <File>
+              <FileName>mpu6050.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\mpu6050.c</FilePath>
             </File>
           </Files>
         </Group>

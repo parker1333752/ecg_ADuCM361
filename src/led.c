@@ -68,3 +68,13 @@ void LED_off(uint8_t LEDx){
 		DioClr(LED_table[LEDx].port,1<<(LED_table[LEDx].pin));
 	}
 }
+
+/**
+	@description toggle LED
+	@param LED
+		- LED1
+		- LED2
+**/
+void LED_toggle(uint8_t LEDx){
+	DioTgl(LED_table[LEDx].port,1<<(LED_table[LEDx].pin));
+}

@@ -5,6 +5,7 @@
 #include "thread_adc.h"
 #include "thread_adc0.h"
 #include "thread_led.h"
+#include "thread_i2c.h"
 
 /**
  * ThreadDeclare.
@@ -15,6 +16,7 @@ const ThreadDeclare thread_list[] = {
 	{{Thread_adc0, osPriorityNormal, 1, 0}, &tid_Thread_adc0, NULL},
 	{{Thread_uart, osPriorityNormal, 1, 0}, &tid_Thread_uart, NULL},
 	{{Thread_led, osPriorityNormal, 1, 0}, &tid_Thread_led, NULL},
+//	{{Thread_i2c, osPriorityNormal, 1, 0}, &tid_Thread_i2c, NULL},
 };
 
 int main (void) {
