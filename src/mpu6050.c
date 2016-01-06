@@ -51,6 +51,9 @@ TM_MPU6050_Result_t TM_MPU6050_Init(TM_MPU6050_t* DataStruct, TM_MPU6050_Device_
 	temp = (temp & 0xE7) | (uint8_t)GyroscopeSensitivity << 3;
 	I2C_write(DataStruct->Address, MPU6050_GYRO_CONFIG, temp);
 	
+	/* Additional Config */
+	I2C_write(DataStruct->Address, MPU6050_CONFIG, 0x01);
+	
 	/* Set sensitivities for multiplying gyro and accelerometer data */
 	switch (AccelerometerSensitivity) {
 		case TM_MPU6050_Accelerometer_2G:

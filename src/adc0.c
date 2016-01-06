@@ -13,10 +13,12 @@
 void ADC0_init(void)
 {
 	// ADC configuration.
-//    AdcRng(pADI_ADC0, ADCCON_ADCREF_INTREF, ADCMDE_PGA_G1, ADCCON_ADCCODE_INT);
-//    AdcFlt(pADI_ADC0, 7, 0, FLT_NORMAL|ADCFLT_SINC4EN);
 	AdcRng(pADI_ADC0, ADCCON_ADCREF_INTREF, ADCMDE_PGA_G1, ADCCON_ADCCODE_INT);
-    AdcFlt(pADI_ADC0, 1, 0, ADCFLT_SINC4EN);
+	/* Note That, if sampling rate is greater than or equal to 500Hz, ADCFLT_SINC4EN must be set. */
+    AdcFlt(pADI_ADC0, 18, 0, 0); //
+	pADI_ADC0->CON &= ~(uint32_t)ADCCON_ADCREF_MSK;
+	pADI_ADC0->CON |= ADCCON_ADCREF_INTREF;
+	AdcPin(pADI_ADC0,ADCCON_ADCCN_AIN1,ADCCON_ADCCP_AIN0);
     
 	AdcMski(pADI_ADC0, ADCMSKI_RDY, 1); 
     AdcBuf(pADI_ADC0,ADCCFG_EXTBUF_OFF,ADCCON_BUFBYPN|ADCCON_BUFBYPP|ADCCON_BUFPOWP|ADCCON_BUFPOWN); 
@@ -34,58 +36,13 @@ void ADC0_init(void)
     ECG_afe_start();
 }
 
-void ECG_calibration()
-{
-	volatile int32_t of = pADI_ADC0->OF;
-	volatile int32_t ga = pADI_ADC0->INTGN;
-    AdcPin(pADI_ADC0, ADCCON_ADCCN_AIN1, ADCCON_ADCCP_AVDD4);
-    AdcGo(pADI_ADC0, ADCMDE_ADCMD_INTGCAL);
-	while(1);
-}
-
-void ECG_start_sample(void)
-{
-	if ((pADI_ADC0->MDE & ADCMDE_ADCMD_MSK) != ADCMDE_ADCMD_SINGLE){
-		pADI_ADC0->CON &= ~(uint32_t)ADCCON_ADCREF_MSK;
-		pADI_ADC0->CON |= ADCCON_ADCREF_INTREF;
-		AdcPin(pADI_ADC0,ADCCON_ADCCN_AIN1,ADCCON_ADCCP_AIN0);
-		AdcGo(pADI_ADC0, ADCMDE_ADCMD_SINGLE);
-	}
-}
-
 void ECG_start_continuous(void)
 {
 	AdcGo(pADI_ADC0, ADCMDE_ADCMD_IDLE);
 	if ((pADI_ADC0->MDE & ADCMDE_ADCMD_MSK) != ADCMDE_ADCMD_CONT){
-		pADI_ADC0->CON &= ~(uint32_t)ADCCON_ADCREF_MSK;
-		pADI_ADC0->CON |= ADCCON_ADCREF_INTREF;
-		AdcFlt(pADI_ADC0, 0x1f, 0, ADCFLT_SINC4EN);
-		AdcPin(pADI_ADC0,ADCCON_ADCCN_AIN1,ADCCON_ADCCP_AIN0);
 		AdcGo(pADI_ADC0, ADCMDE_ADCMD_CONT);
 	}
 }
-
-//void HS_start_sample(void)
-//{
-//	if ((pADI_ADC0->MDE & ADCMDE_ADCMD_MSK) != ADCMDE_ADCMD_SINGLE){
-//		pADI_ADC0->CON &= ~(uint32_t)ADCCON_ADCREF_MSK;
-//		pADI_ADC0->CON |= ADCCON_ADCREF_AVDDREF;
-//		AdcPin(pADI_ADC0, ADCCON_ADCCN_AGND, ADCCON_ADCCP_AIN2);
-//		AdcGo(pADI_ADC0, ADCMDE_ADCMD_SINGLE);
-//	}
-//}
-
-//void HS_start_continuous(void)
-//{
-//	AdcGo(pADI_ADC0, ADCMDE_ADCMD_IDLE);
-//	if ((pADI_ADC0->MDE & ADCMDE_ADCMD_MSK) != ADCMDE_ADCMD_CONT){
-//		pADI_ADC0->CON &= ~(uint32_t)ADCCON_ADCREF_MSK;
-//		pADI_ADC0->CON |= ADCCON_ADCREF_EXTREF;
-//		AdcFlt(pADI_ADC0, 0xf, 0, ADCFLT_SINC4EN);
-//		AdcPin(pADI_ADC0, ADCCON_ADCCN_AGND, ADCCON_ADCCP_AIN2);
-//		AdcGo(pADI_ADC0, ADCMDE_ADCMD_CONT);
-//	}
-//}
 
 /**
  * check if RA lead off

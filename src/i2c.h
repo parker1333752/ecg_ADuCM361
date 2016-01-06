@@ -6,11 +6,12 @@
 #define SIG_I2C_RX_COMPLETE 0x02
 #define SIG_I2C_TX_COMPLETE 0x03
 
-#define I2C_RXTXBUFFER_SIZE 250
+#define I2C_RXTXBUFFER_SIZE 100
 typedef struct{
 	uint8_t data[I2C_RXTXBUFFER_SIZE];
 	int len;
 	int index;
+	int addr;
 }I2cRxTxBufferDef;
 
 void I2C_init(void);
