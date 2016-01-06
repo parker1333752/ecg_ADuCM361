@@ -72,7 +72,7 @@ void Thread_adc (void const *argument)
 			ecg_frame.Gyroscope_X = mpu_data.Gyroscope_X;
 			ecg_frame.Gyroscope_Y = mpu_data.Gyroscope_Y;
 			ecg_frame.Gyroscope_Z = mpu_data.Gyroscope_Z;
-//			UART_Write_Frame(0x01, sizeof(EcgDataDef), &ecg_frame);
+			UART_Write_Frame(0x01, sizeof(EcgDataDef), (void*)&ecg_frame);
 		}
 	}
 }

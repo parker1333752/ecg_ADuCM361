@@ -16,7 +16,6 @@ I2cRxTxBufferDef rxbuffer;
 
 void I2C_init(void)
 {
-	//TODO: complete second arg for interrupt setting.
 	I2cMCfg(0, I2CMCON_IENCMP|I2CMCON_IENRX|I2CMCON_IENTX, I2CMCON_MAS_EN);
 	I2cStretch(MASTER, STRETCH_EN); // what's the mean of stretch?
 	#ifdef USE_I2C_400kHz_CLOCK
@@ -51,9 +50,6 @@ void I2C_readMulti(int addr, int reg, uint8_t* data, int bytesCount)
 	rxbuffer.addr = addr;
 	I2cTx(0, txbuffer.data[txbuffer.index++]);
 	I2cMWrCfg(addr);
-//	osSignalWait(SIG_I2C_TX_COMPLETE, osWaitForever);
-//	
-//	I2cMRdCfg(addr, bytesCount, I2CMRXCNT_EXTEND_DIS);
 	osSignalWait(SIG_I2C_RX_COMPLETE, osWaitForever);
 	for(i = 0;i<bytesCount;++i){
 		*(data+i) = rxbuffer.data[i];

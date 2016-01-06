@@ -18,14 +18,13 @@ int32_t time;
 void Thread_i2c (void const *argument) {
 	/* initialize */
 	if(TM_MPU6050_Result_Ok != TM_MPU6050_Init(&data,TM_MPU6050_Device_0,TM_MPU6050_Accelerometer_8G,TM_MPU6050_Gyroscope_250s)){
-		// TODO: Change to periodically check device.
+		// TODO: Change to periodically check device if device not found.
 		return;
 	}
-	Timer0_init(400);
-
+	
 	while(1) {
 //		if(TM_MPU6050_ReadSta(&data, DATA_RDY_INT)){
-			osDelay(2);
+//			osDelay(1);
 			TM_MPU6050_ReadAll(&data);
 			mpu_data.Accelerometer_X = data.Accelerometer_X;
 			mpu_data.Accelerometer_Y = data.Accelerometer_Y;
@@ -36,17 +35,6 @@ void Thread_i2c (void const *argument) {
 			mpu_data.date = data.Time & 0x7fff; 
 //			UART_Write_Frame(0x02, sizeof(MpuDataDef), &mpu_data);
 //		}
-	}
-}
-
-void GP_Tmr0_Int_Handler(){
-	volatile int flag = GptSta(pADI_TM0);
-	if(flag & TSTA_TMOUT){
-		GptClrInt(pADI_TM0, TCLRI_TMOUT);
-		// mpu_data.date = getTime() & 0x7fff;
-		UART_Write_Frame(0x02, sizeof(MpuDataDef), &mpu_data);
-	} else if(flag & TSTA_CAP){
-		GptClrInt(pADI_TM0, TCLRI_CAP);
 	}
 }
 
