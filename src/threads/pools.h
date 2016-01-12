@@ -16,7 +16,7 @@ typedef struct {
 	int size;
 }MqueueDef;
 
-void initQ(MqueueDef* const th,int size);
+void initQ(MqueueDef* const th,int size,uint8_t*);
 void pushQ(MqueueDef* const th, uint8_t data);
 uint8_t popQ(MqueueDef* const th);
 int emptyQ(MqueueDef* const th);

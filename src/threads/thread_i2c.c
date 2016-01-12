@@ -37,7 +37,7 @@ MPUqueueDef MpuDataQueue;
 MPUqueueDef* const PMpuDataQueue = &MpuDataQueue;
 void initQMPU(MPUqueueDef* const th,int size){
 	th->size = size;
-	th->data = malloc(size*sizeof(MPUqueueDef));
+	th->data = malloc(size * sizeof(MPUqueueDef));
 	th->front = th->rear = 0;
 }
 void pushQMPU(MPUqueueDef* const th, MpuDataDef* data){
@@ -73,11 +73,9 @@ MpuDataDef* popNewestMPUforExt(void){
 void Thread_i2c (void const *argument) {
 	/* initialize */
 	if(TM_MPU6050_Result_Ok != TM_MPU6050_Init(&data,TM_MPU6050_Device_0,TM_MPU6050_Accelerometer_8G,TM_MPU6050_Gyroscope_250s)){
-		// TODO: Change to periodically check device if device not found.
 		return;
 	}
 	initQMPU(PMpuDataQueue,3);
-//	Timer0_init(400);
 	
 	while(1) {
 //		if(TM_MPU6050_ReadSta(&data, DATA_RDY_INT)){
@@ -96,19 +94,6 @@ void Thread_i2c (void const *argument) {
 	}
 }
 
-void GP_Tmr0_Int_Handler(){
-	volatile int flag = GptSta(pADI_TM0);
-	MpuDataDef* tmp;
-	if(flag & TSTA_TMOUT){
-		GptClrInt(pADI_TM0, TCLRI_TMOUT);
-		// mpu_data.date = getTime() & 0x7fff;
-		tmp = popNewestMPU(PMpuDataQueue);
-		UART_Write_Frame(0x02, sizeof(MpuDataDef), tmp);
-//		UART_Write_Frame(0x02, sizeof(MpuDataDef), &mpu_data);
-	} else if(flag & TSTA_CAP){
-		GptClrInt(pADI_TM0, TCLRI_CAP);
-	}
-}
 void I2C0_Master_Int_Handler(void)
 {
 	volatile int uiStatus = I2cSta(0);

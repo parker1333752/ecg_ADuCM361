@@ -16,12 +16,12 @@ osSemaphoreDef (Se_UartWrite);
 MqueueDef __UartWriteQueue;
 MqueueDef* const UartWriteQueue = &__UartWriteQueue;
 volatile uint8_t UartTxStopped;
+uint8_t __UartWriteQueueData[UartWriteQueueSize];
 
-
-/* Define uart read message queue. Used for transform MPU data. */
-#define Q_UartRead_Size 30
-osMessageQId Q_UartRead;
-osMessageQDef (Q_UartRead, Q_UartRead_Size, uint32_t);
+///* Define uart read message queue. Used for transform MPU data. */
+//#define Q_UartRead_Size 30
+//osMessageQId Q_UartRead;
+//osMessageQDef (Q_UartRead, Q_UartRead_Size, uint32_t);
 
 /* ========== Define thread ids ============================================= */
 osThreadId tid_Thread_uart;
@@ -41,17 +41,16 @@ volatile char flagUartInitComplete = 0;
  * and send this data to PC.
  */
 void Thread_uart (void const *argument) {
-	osEvent os_result;
-
 	// Configure uart peripheral.
 	UART_init();
 
-	// Create message queue
-	Q_UartRead = osMessageCreate(osMessageQ(Q_UartRead), NULL);
+//	// Create message queue
+//	Q_UartRead = osMessageCreate(osMessageQ(Q_UartRead), NULL);
 	
 	// Create semaphoreCreate for uart write queue
 	Se_UartWrite = osSemaphoreCreate(osSemaphore(Se_UartWrite), Se_UartWrite_Count);
-	initQ(UartWriteQueue, Q_UartRead_Size);
+	
+	initQ(UartWriteQueue, UartWriteQueueSize, __UartWriteQueueData);
 
 	// create thread uart send
 	tid_Thread_uart_send = osThreadCreate(&ThreadDef_uart_send, NULL);
@@ -111,8 +110,8 @@ void UART_Write_Frame(uint8_t tag, uint16_t length, void* value)
 	uint8_t* p = value;
 	uint8_t sumcheck = 0;
 	
-//	EcgDataDef* ptmp = value;
-//	ptmp->date = sizeQ(UartWriteQueue);
+	EcgDataDef* ptmp = value;
+	ptmp->date = sizeQ(UartWriteQueue);
 
 	/* discards data before uart init completed. */
 	if (flagUartInitComplete == 0) return;

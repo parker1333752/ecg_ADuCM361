@@ -1,6 +1,7 @@
 #include "thread_adc.h"
 #include "thread_uart.h"
 #include "adc.h"
+#include "adc0.h"
 #include <stdio.h>
 #include "pools.h"
 #include "AdcLib.h"
@@ -23,7 +24,7 @@ osMessageQId Q_ADCVALUE;
 _PoolDef(P_ADCVALUE, Q_ADCVALUE_SIZE, AdcValueDef);
 
 static enum AdcDataType current_adc_type;
-extern volatile int32_t adc0_data;
+int32_t adc0_data;
 
 volatile EcgDataDef ecg_frame = {0,0,0};
 
@@ -36,6 +37,7 @@ void Thread_adc (void const *argument)
 	MpuDataDef* mpu_data;
 
 	ADC1_init();
+	ADC0_init();
 	ecg_frame.ecg_data = 0;
 	ecg_frame.hs_data = 0;
 	
@@ -47,6 +49,7 @@ void Thread_adc (void const *argument)
 		current_adc_type = ecg;
 	#elif defined(GET_HS_CONTINUOUS)
 		HS_start_continuous();
+		ECG_start_continuous();
 		current_adc_type = hs;
 	#endif
 
@@ -80,7 +83,7 @@ void Thread_adc (void const *argument)
 
 void ADC1_Int_Handler(void)
 {
-	volatile int f_ADCSTA = 0;
+	int f_ADCSTA = 0;
 	AdcValueDef *pdata;
 	int32_t data;
 	f_ADCSTA = AdcSta(pADI_ADC1);	// Read ADC status register to clear
@@ -92,5 +95,15 @@ void ADC1_Int_Handler(void)
 		pdata->date = getCurrentCount_Timer1();
 		pdata->type = current_adc_type;
 		osMessagePut(Q_ADCVALUE, (uint32_t)pdata, 0);
+	}
+}
+
+void ADC0_Int_Handler(void)
+{
+	int f_ADCSTA = 0;
+	f_ADCSTA = AdcSta(pADI_ADC0);	// Read ADC status register to clear
+	if(f_ADCSTA & DETSTA_STEPDATRDY){
+		adc0_data = AdcRd(pADI_ADC0);            // Read ADC result register
+		++adc0_data;
 	}
 }
