@@ -1,7 +1,9 @@
 #include "thread_uart.h"
+#include "thread_adc.h"
 #include "uart.h"
 #include "utils.h"
 #include <stdio.h>
+#include "pools.h"
 
 /* ========== Define Message Queues ========================================= */
 /* Define uart write message queue.
@@ -9,32 +11,10 @@
 #define Se_UartWrite_Count 1 // only one uart peripherals.
 osSemaphoreId Se_UartWrite;
 osSemaphoreDef (Se_UartWrite);
+
 #define UartWriteQueueSize 2000
-typedef struct {
-	uint8_t data[UartWriteQueueSize];
-	int front;
-	int rear;
-}MqueueDef;
 MqueueDef __UartWriteQueue;
 MqueueDef* const UartWriteQueue = &__UartWriteQueue;
-void initQ(MqueueDef* const th){
-	th->front = th->rear = 0;
-}
-void pushQ(MqueueDef* const th, uint8_t data){
-	th->data[th->rear++] = data;
-	if(th->rear >= UartWriteQueueSize)th->rear = 0;
-	// Discards oldest data;
-	if(th->rear == th->front)th->front = (th->front+1)%UartWriteQueueSize;
-}
-uint8_t popQ(MqueueDef* const th){
-	uint8_t rt = th->data[th->front++];
-	if(th->front >= UartWriteQueueSize)th->front = 0;
-	return rt;
-}
-int emptyQ(MqueueDef* const th){
-	return (th->front == th->rear);
-}
-
 volatile uint8_t UartTxStopped;
 
 
@@ -71,7 +51,7 @@ void Thread_uart (void const *argument) {
 	
 	// Create semaphoreCreate for uart write queue
 	Se_UartWrite = osSemaphoreCreate(osSemaphore(Se_UartWrite), Se_UartWrite_Count);
-	initQ(UartWriteQueue);
+	initQ(UartWriteQueue, Q_UartRead_Size);
 
 	// create thread uart send
 	tid_Thread_uart_send = osThreadCreate(&ThreadDef_uart_send, NULL);
@@ -130,6 +110,9 @@ void UART_Write_Frame(uint8_t tag, uint16_t length, void* value)
 	uint8_t temp,i;
 	uint8_t* p = value;
 	uint8_t sumcheck = 0;
+	
+//	EcgDataDef* ptmp = value;
+//	ptmp->date = sizeQ(UartWriteQueue);
 
 	/* discards data before uart init completed. */
 	if (flagUartInitComplete == 0) return;

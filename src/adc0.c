@@ -15,7 +15,7 @@ void ADC0_init(void)
 	// ADC configuration.
 	AdcRng(pADI_ADC0, ADCCON_ADCREF_INTREF, ADCMDE_PGA_G1, ADCCON_ADCCODE_INT);
 	/* Note That, if sampling rate is greater than or equal to 500Hz, ADCFLT_SINC4EN must be set. */
-    AdcFlt(pADI_ADC0, 18, 0, 0); //
+    AdcFlt(pADI_ADC0, 19, 0, 0); //
 	pADI_ADC0->CON &= ~(uint32_t)ADCCON_ADCREF_MSK;
 	pADI_ADC0->CON |= ADCCON_ADCREF_INTREF;
 	AdcPin(pADI_ADC0,ADCCON_ADCCN_AIN1,ADCCON_ADCCP_AIN0);

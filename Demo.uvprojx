@@ -444,6 +444,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\threads\thread_i2c.c</FilePath>
             </File>
+            <File>
+              <FileName>pools.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\threads\pools.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -612,7 +617,7 @@
 
   <RTE>
     <apis>
-      <api Capiversion="1.0" Cclass="CMSIS" Cgroup="RTOS" exclusive="0">
+      <api Capiversion="1.0" Cclass="CMSIS" Cgroup="RTOS" Cvendor="ARM" exclusive="0">
         <package name="CMSIS" schemaVersion="1.0" url="http://www.keil.com/pack/" vendor="ARM" version="3.20.4"/>
         <targetInfos>
           <targetInfo name="Version1.0"/>

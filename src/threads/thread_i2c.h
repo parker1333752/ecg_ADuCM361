@@ -18,5 +18,6 @@ typedef struct{
 extern osThreadId tid_Thread_i2c;
 
 void Thread_i2c(const void*);
+MpuDataDef* popNewestMPUforExt(void);
 
 #endif

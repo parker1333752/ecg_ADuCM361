@@ -26,7 +26,6 @@ static enum AdcDataType current_adc_type;
 extern volatile int32_t adc0_data;
 
 volatile EcgDataDef ecg_frame = {0,0,0};
-extern MpuDataDef mpu_data;
 
 // sampling ECG signal
 void Thread_adc (void const *argument)
@@ -34,6 +33,7 @@ void Thread_adc (void const *argument)
 	int32_t tickcount_start;
 	AdcValueDef *pdata;
 	osEvent os_result;
+	MpuDataDef* mpu_data;
 
 	ADC1_init();
 	ecg_frame.ecg_data = 0;
@@ -66,12 +66,13 @@ void Thread_adc (void const *argument)
 				ecg_frame.hs_data = pdata->adc;
 				ecg_frame.ecg_data = pdata->adc0;
 			}
-			ecg_frame.Accelerometer_X = mpu_data.Accelerometer_X;
-			ecg_frame.Accelerometer_Y = mpu_data.Accelerometer_Y;
-			ecg_frame.Accelerometer_Z = mpu_data.Accelerometer_Z;
-			ecg_frame.Gyroscope_X = mpu_data.Gyroscope_X;
-			ecg_frame.Gyroscope_Y = mpu_data.Gyroscope_Y;
-			ecg_frame.Gyroscope_Z = mpu_data.Gyroscope_Z;
+			mpu_data = popNewestMPUforExt();
+			ecg_frame.Accelerometer_X = mpu_data->Accelerometer_X;
+			ecg_frame.Accelerometer_Y = mpu_data->Accelerometer_Y;
+			ecg_frame.Accelerometer_Z = mpu_data->Accelerometer_Z;
+			ecg_frame.Gyroscope_X = mpu_data->Gyroscope_X;
+			ecg_frame.Gyroscope_Y = mpu_data->Gyroscope_Y;
+			ecg_frame.Gyroscope_Z = mpu_data->Gyroscope_Z;
 			UART_Write_Frame(0x01, sizeof(EcgDataDef), (void*)&ecg_frame);
 		}
 	}
