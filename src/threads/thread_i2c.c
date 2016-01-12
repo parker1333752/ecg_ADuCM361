@@ -27,28 +27,28 @@ int MPUcpy(MpuDataDef *source ,MpuDataDef *dest){
 	return 0;
 }
 
+#define MpuDataDefQueueSize 3
 typedef struct {
-	MpuDataDef* data;
+	MpuDataDef data[MpuDataDefQueueSize];
 	int front;
 	int rear;
 	int size;
 }MPUqueueDef;
 MPUqueueDef MpuDataQueue;
 MPUqueueDef* const PMpuDataQueue = &MpuDataQueue;
-void initQMPU(MPUqueueDef* const th,int size){
-	th->size = size;
-	th->data = malloc(size * sizeof(MPUqueueDef));
+void initQMPU(MPUqueueDef* const th){
+	th->size = MpuDataDefQueueSize;
 	th->front = th->rear = 0;
 }
 void pushQMPU(MPUqueueDef* const th, MpuDataDef* data){
-	MPUcpy(data, (th->data + th->rear));
+	MPUcpy(data, &th->data[th->rear]);
 	th->rear++;
 	if(th->rear >= th->size)th->rear = 0;
 	// Discards oldest data;
 	if(th->rear == th->front)th->front = (th->front+1)%th->size;
 }
 MpuDataDef* popQMPU(MPUqueueDef* const th){
-	MpuDataDef* rt = (th->data + th->front);
+	MpuDataDef* rt = &th->data[th->front];
 	th->front++;
 	if(th->front >= th->size)th->front = 0;
 	return rt;
@@ -75,12 +75,12 @@ void Thread_i2c (void const *argument) {
 	if(TM_MPU6050_Result_Ok != TM_MPU6050_Init(&data,TM_MPU6050_Device_0,TM_MPU6050_Accelerometer_8G,TM_MPU6050_Gyroscope_250s)){
 		return;
 	}
-	initQMPU(PMpuDataQueue,3);
+	initQMPU(PMpuDataQueue);
 	
 	while(1) {
 //		if(TM_MPU6050_ReadSta(&data, DATA_RDY_INT)){
 			osDelay(2);
-			TM_MPU6050_ReadAll(&data);
+			TM_MPU6050_ReadAll2(&data);
 			mpu_data.Accelerometer_X = data.Accelerometer_X;
 			mpu_data.Accelerometer_Y = data.Accelerometer_Y;
 			mpu_data.Accelerometer_Z = data.Accelerometer_Z;
@@ -96,10 +96,10 @@ void Thread_i2c (void const *argument) {
 
 void I2C0_Master_Int_Handler(void)
 {
-	volatile int uiStatus = I2cSta(0);
-	volatile uint8_t data;
+	int uiStatus = I2cSta(0);
+	uint8_t data;
 	if((uiStatus & I2CMSTA_RXREQ) == I2CMSTA_RXREQ) {/* i2c receive interrupt */
-		data = I2cRx(0)&0xff;
+		data = I2cRx(0);
 		if(rxbuffer.index < rxbuffer.len){
 			rxbuffer.data[rxbuffer.index++] = data;
 			if(rxbuffer.index == rxbuffer.len){
@@ -118,8 +118,7 @@ void I2C0_Master_Int_Handler(void)
 		I2cMCfg(I2CMCON_TXDMA_DIS|I2CMCON_RXDMA_DIS, I2CMCON_IENCMP|I2CMCON_IENRX|I2CMCON_IENTX_EN, I2CMCON_MAS_EN);   // TXREQ enabled for future master transmissions    
 		if(rxbuffer.index == 0 && rxbuffer.index < rxbuffer.len){
 			I2cMRdCfg(rxbuffer.addr, rxbuffer.len, I2CMRXCNT_EXTEND_DIS);
-		} else {
-			osSignalSet(tid_Thread_i2c, SIG_I2C_TX_COMPLETE);
 		}
+		osSignalSet(tid_Thread_i2c, SIG_I2C_TX_COMPLETE);
 	}
 }

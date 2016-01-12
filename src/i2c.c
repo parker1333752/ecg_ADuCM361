@@ -45,14 +45,17 @@ void I2C_readMulti(int addr, int reg, uint8_t* data, int bytesCount)
 	int i;
 	txbuffer.data[0] = reg;
 	txbuffer.len = 1;txbuffer.index = 0;
+	
 	rxbuffer.len = bytesCount;
 	rxbuffer.index = 0;
 	rxbuffer.addr = addr;
+	
 	I2cTx(0, txbuffer.data[txbuffer.index++]);
 	I2cMWrCfg(addr);
+//	osSignalWait(SIG_I2C_TX_COMPLETE, osWaitForever);
 	osSignalWait(SIG_I2C_RX_COMPLETE, osWaitForever);
 	for(i = 0;i<bytesCount;++i){
-		*(data+i) = rxbuffer.data[i];
+		data[i] = rxbuffer.data[i];
 	}
 }
 

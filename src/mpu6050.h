@@ -284,6 +284,7 @@ TM_MPU6050_Result_t TM_MPU6050_ReadTemperature(TM_MPU6050_t* DataStruct);
  *            - TM_MPU6050_Result_Ok: everything is OK
  *            - Other: in other cases
  */
+TM_MPU6050_Result_t TM_MPU6050_ReadAll2(TM_MPU6050_t* DataStruct);
 TM_MPU6050_Result_t TM_MPU6050_ReadAll(TM_MPU6050_t* DataStruct);
 
 

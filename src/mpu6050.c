@@ -51,8 +51,8 @@ TM_MPU6050_Result_t TM_MPU6050_Init(TM_MPU6050_t* DataStruct, TM_MPU6050_Device_
 	temp = (temp & 0xE7) | (uint8_t)GyroscopeSensitivity << 3;
 	I2C_write(DataStruct->Address, MPU6050_GYRO_CONFIG, temp);
 	
-	/* Additional Config */
-	I2C_write(DataStruct->Address, MPU6050_CONFIG, 0x01);
+//	/* Additional Config */
+//	I2C_write(DataStruct->Address, MPU6050_CONFIG, 0x01);
 	
 	/* Set sensitivities for multiplying gyro and accelerometer data */
 	switch (AccelerometerSensitivity) {
@@ -142,6 +142,56 @@ TM_MPU6050_Result_t TM_MPU6050_ReadTemperature(TM_MPU6050_t* DataStruct) {
 	DataStruct->Time = getTime();
 	
 	/* Return OK */
+	return TM_MPU6050_Result_Ok;
+}
+
+uint8_t __data[14] = {0};
+TM_MPU6050_Result_t TM_MPU6050_ReadAll2(TM_MPU6050_t* DataStruct) {
+	int16_t temp;
+	uint8_t* data = __data;
+	
+//	I2C_readMulti(DataStruct->Address, 0x75, data, 1);
+//	temp = (int)data[0];
+//	DataStruct->Accelerometer_X = temp;
+//	
+//	I2C_readMulti(DataStruct->Address, MPU6050_ACCEL_YOUT_H, data, 2);
+//	temp = (data[0] << 8 | data[1]);
+//	DataStruct->Accelerometer_Y = temp;
+//	
+//	I2C_readMulti(DataStruct->Address, MPU6050_ACCEL_ZOUT_H, data, 2);
+//	temp = (data[0] << 8 | data[1]);
+//	DataStruct->Accelerometer_Z = temp;
+//	
+//	I2C_readMulti(DataStruct->Address, MPU6050_GYRO_XOUT_H, data, 2);
+//	temp = (data[0] << 8 | data[1]);
+//	DataStruct->Gyroscope_X = temp;
+//	
+//	I2C_readMulti(DataStruct->Address, MPU6050_GYRO_YOUT_H, data, 2);
+//	temp = (data[0] << 8 | data[1]);
+//	DataStruct->Gyroscope_Y = temp;
+//	
+//	I2C_readMulti(DataStruct->Address, MPU6050_GYRO_ZOUT_H, data, 2);
+//	temp = (data[0] << 8 | data[1]);
+//	DataStruct->Gyroscope_Z = temp;
+
+	for(temp=0;temp<2;++temp){
+		data[temp] = I2C_read(DataStruct->Address, MPU6050_ACCEL_XOUT_H + temp);
+	}
+	
+	/* Format accelerometer data */
+	DataStruct->Accelerometer_X = (int16_t)(data[0] << 8 | data[1]);	
+	DataStruct->Accelerometer_Y = (int16_t)(data[2] << 8 | data[3]);
+	DataStruct->Accelerometer_Z = (int16_t)(data[4] << 8 | data[5]);
+
+	/* Format temperature */
+	temp = (data[6] << 8 | data[7]);
+	DataStruct->Temperature = (float)((float)((int16_t)temp) / (float)340.0 + (float)36.53);
+	
+	/* Format gyroscope data */
+	DataStruct->Gyroscope_X = (int16_t)(data[8] << 8 | data[9]);
+	DataStruct->Gyroscope_Y = (int16_t)(data[10] << 8 | data[11]);
+	DataStruct->Gyroscope_Z = (int16_t)(data[12] << 8 | data[13]);
+	
 	return TM_MPU6050_Result_Ok;
 }
 

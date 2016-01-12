@@ -110,8 +110,8 @@ void UART_Write_Frame(uint8_t tag, uint16_t length, void* value)
 	uint8_t* p = value;
 	uint8_t sumcheck = 0;
 	
-	EcgDataDef* ptmp = value;
-	ptmp->date = sizeQ(UartWriteQueue);
+//	EcgDataDef* ptmp = value;
+//	ptmp->date = sizeQ(UartWriteQueue);
 
 	/* discards data before uart init completed. */
 	if (flagUartInitComplete == 0) return;
