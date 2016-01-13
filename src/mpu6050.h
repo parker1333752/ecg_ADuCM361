@@ -174,7 +174,8 @@ typedef enum {
 typedef enum {
 	TM_MPU6050_Result_Ok = 0x00,          /*!< Everything OK */
 	TM_MPU6050_Result_DeviceNotConnected, /*!< There is no device with valid slave address */
-	TM_MPU6050_Result_DeviceInvalid       /*!< Connected device with address is not MPU6050 */
+	TM_MPU6050_Result_DeviceInvalid,      /*!< Connected device with address is not MPU6050 */
+	TM_MPU6050_Result_ConfigError
 } TM_MPU6050_Result_t;
 
 /**
@@ -284,11 +285,12 @@ TM_MPU6050_Result_t TM_MPU6050_ReadTemperature(TM_MPU6050_t* DataStruct);
  *            - TM_MPU6050_Result_Ok: everything is OK
  *            - Other: in other cases
  */
-TM_MPU6050_Result_t TM_MPU6050_ReadAll2(TM_MPU6050_t* DataStruct);
-TM_MPU6050_Result_t TM_MPU6050_ReadAll(TM_MPU6050_t* DataStruct);
-
+#include "thread_i2c.h"
+TM_MPU6050_Result_t TM_MPU6050_ReadAll(TM_MPU6050_t* DataStruct,MpuDataDef*);
+void TM_MPU6050_ReadAll2(TM_MPU6050_t* DataStruct,MpuDataDef*);
 
 char TM_MPU6050_ReadSta(TM_MPU6050_t* DataStruct, uint8_t bit);
+uint8_t TM_MPU6050_ReadWhoIAm(TM_MPU6050_t* DataStruct);
 
 /**
  * @}

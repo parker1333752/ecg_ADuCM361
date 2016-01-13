@@ -2,9 +2,11 @@
 #define __I2C_H__
 
 #include <stdint.h>
+
 // Define signal value.
-#define SIG_I2C_RX_COMPLETE 0x02
-#define SIG_I2C_TX_COMPLETE 0x03
+#define SIG_I2C_TXRX_COMPLETE 0x03
+
+#define RX_BUFFER_NEED_TO_READ 0x7fff
 
 #define I2C_RXTXBUFFER_SIZE 100
 typedef struct{
