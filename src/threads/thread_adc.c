@@ -35,6 +35,8 @@ void Thread_adc (void const *argument)
 	AdcValueDef *pdata;
 	osEvent os_result;
 	MpuDataDef* mpu_data;
+//	uint8_t* p;
+//	int i;
 
 	ADC1_init();
 	ADC0_init();
@@ -76,6 +78,14 @@ void Thread_adc (void const *argument)
 			ecg_frame.Gyroscope_X = mpu_data->Gyroscope_X;
 			ecg_frame.Gyroscope_Y = mpu_data->Gyroscope_Y;
 			ecg_frame.Gyroscope_Z = mpu_data->Gyroscope_Z;
+			
+//			p = (uint8_t*)&ecg_frame;
+//			for(i=0;i<4;++i){
+//				*(p+i) = 0xfc;
+//			}
+//			for(;i<sizeof(EcgDataDef)-2;++i){
+//				*(p+i) = 0x5;
+//			}
 			UART_Write_Frame(0x01, sizeof(EcgDataDef), (void*)&ecg_frame);
 		}
 	}

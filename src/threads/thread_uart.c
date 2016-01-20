@@ -68,13 +68,9 @@ void Thread_uart (void const *argument) {
 	#define PACKAGE_ESC		0xfa
 	#define PACKAGE_START 	0xfb
 	#define PACKAGE_END		0xfc
-	#define PACKAGE_X1		0xff
-	#define PACKAGE_X2		0xaa
 	#define PACKAGE_E_ESC	0x01
 	#define PACKAGE_E_START	0x02
 	#define PACKAGE_E_END	0x03
-	#define PACKAGE_E_X1	0x04
-	#define PACKAGE_E_X2	0x05
 #endif
 
 void package_and_write(uint8_t ch){
@@ -88,12 +84,6 @@ void package_and_write(uint8_t ch){
 	}else if(ch == PACKAGE_END){
 		pushQ(UartWriteQueue, PACKAGE_ESC);
 		pushQ(UartWriteQueue, PACKAGE_E_END);
-	}else if(ch == PACKAGE_X1){
-		pushQ(UartWriteQueue, PACKAGE_ESC);
-		pushQ(UartWriteQueue, PACKAGE_E_X1);
-	}else if(ch == PACKAGE_X2){
-		pushQ(UartWriteQueue, PACKAGE_ESC);
-		pushQ(UartWriteQueue, PACKAGE_E_X2);
 	}else{
 		pushQ(UartWriteQueue, ch);
 	}
@@ -122,13 +112,13 @@ void UART_Write_Frame(uint8_t tag, uint16_t length, void* value)
 	#ifdef USE_PACKAGE
 		pushQ(UartWriteQueue, PACKAGE_START);
 	#endif
-	// Tag
-	package_and_write(tag);
+//	// Tag
+//	package_and_write(tag);
 	// Length
 	temp = length & 0xff;
 	package_and_write(temp);
-	temp = length >> 8;
-	package_and_write(temp);
+//	temp = length >> 8;
+//	package_and_write(temp);
 	// Value
 	for(i=0;i<length;++i){
 		package_and_write(*(p+i));
@@ -148,14 +138,14 @@ void Thread_uart_send (void const *argument) {
 	uint8_t data;
 	UartTxStopped=1;
 	while(1) {
-		if(emptyQ(UartWriteQueue))osThreadYield();
-		else {
+		if(!emptyQ(UartWriteQueue)){
 			if(UartTxStopped==1){
 				UartTxStopped=0;
 				data = popQ(UartWriteQueue);
 				UrtTx(pADI_UART, data);
 			}
 		}
+		osThreadYield();
 	}
 }
 

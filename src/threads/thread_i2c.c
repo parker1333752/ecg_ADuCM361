@@ -101,7 +101,7 @@ MpuDataDef* popNewestMPUforExt(void){
 void Thread_i2c (void const *argument) {
 	MpuDataDef mpu_data;
 
-	if(TM_MPU6050_Result_Ok != TM_MPU6050_Init(&data,TM_MPU6050_Device_0,TM_MPU6050_Accelerometer_8G,TM_MPU6050_Gyroscope_250s)){
+	while(TM_MPU6050_Result_Ok != TM_MPU6050_Init(&data,TM_MPU6050_Device_0,TM_MPU6050_Accelerometer_8G,TM_MPU6050_Gyroscope_250s)){
 		return;
 	}
 	
