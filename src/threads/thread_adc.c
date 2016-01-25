@@ -31,7 +31,6 @@ volatile EcgDataDef ecg_frame = {0,0,0};
 // sampling ECG signal
 void Thread_adc (void const *argument)
 {
-	int32_t tickcount_start;
 	AdcValueDef *pdata;
 	osEvent os_result;
 	MpuDataDef* mpu_data;
@@ -56,12 +55,12 @@ void Thread_adc (void const *argument)
 	#endif
 
 	// store starting tick count.
-	tickcount_start = getCurrentCount_Timer1();
+	resetCurrentCount_Timer1();
 	while(1) {
 		os_result = osMessageGet(Q_ADCVALUE, osWaitForever);
 		if(os_result.status == osEventMessage){
 			pdata = (AdcValueDef*)os_result.value.v;
-			ecg_frame.date = (pdata->date - tickcount_start) & 0x7fff;
+			ecg_frame.date = pdata->date;
 			if(pdata->type == ecg){
 				//ecg_frame.ecg_data = ECG_ADC_TO_VOLTAGE * pdata->adc / MAX_ECG_ADC_VALUE;
 				ecg_frame.ecg_data = pdata->adc;
@@ -78,14 +77,7 @@ void Thread_adc (void const *argument)
 			ecg_frame.Gyroscope_X = mpu_data->Gyroscope_X;
 			ecg_frame.Gyroscope_Y = mpu_data->Gyroscope_Y;
 			ecg_frame.Gyroscope_Z = mpu_data->Gyroscope_Z;
-			
-//			p = (uint8_t*)&ecg_frame;
-//			for(i=0;i<4;++i){
-//				*(p+i) = 0xfc;
-//			}
-//			for(;i<sizeof(EcgDataDef)-2;++i){
-//				*(p+i) = 0x5;
-//			}
+
 			UART_Write_Frame(0x01, sizeof(EcgDataDef), (void*)&ecg_frame);
 		}
 	}

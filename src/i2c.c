@@ -67,6 +67,6 @@ void I2C_write(int addr, int reg, int data)
 	osSignalWait(SIG_I2C_TXRX_COMPLETE, osWaitForever);
 }
 
-int32_t getTime(){
-	return getCurrentCount_Timer1();
-}
+//int32_t getTime(){
+//	return getCurrentCount_Timer1();
+//}

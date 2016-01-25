@@ -11,7 +11,7 @@ enum AdcDataType{
 typedef struct{
 	int32_t adc;
 	int32_t adc0;
-	int32_t date;
+	int16_t date;
 	enum AdcDataType type;
 }AdcValueDef;
 #pragma pack(push, 1)

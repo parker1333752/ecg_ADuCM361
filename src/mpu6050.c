@@ -111,8 +111,8 @@ TM_MPU6050_Result_t TM_MPU6050_ReadAccelerometer(TM_MPU6050_t* DataStruct) {
 	DataStruct->Accelerometer_Y = (int16_t)(data[2] << 8 | data[3]);
 	DataStruct->Accelerometer_Z = (int16_t)(data[4] << 8 | data[5]);
 	
-	/* Get time */
-	DataStruct->Time = getTime();
+//	/* Get time */
+//	DataStruct->Time = getTime();
 	
 	/* Return OK */
 	return TM_MPU6050_Result_Ok;
@@ -129,8 +129,8 @@ TM_MPU6050_Result_t TM_MPU6050_ReadGyroscope(TM_MPU6050_t* DataStruct) {
 	DataStruct->Gyroscope_Y = (int16_t)(data[2] << 8 | data[3]);
 	DataStruct->Gyroscope_Z = (int16_t)(data[4] << 8 | data[5]);
 
-	/* Get time */
-	DataStruct->Time = getTime();
+//	/* Get time */
+//	DataStruct->Time = getTime();
 	
 	/* Return OK */
 	return TM_MPU6050_Result_Ok;
@@ -147,8 +147,8 @@ TM_MPU6050_Result_t TM_MPU6050_ReadTemperature(TM_MPU6050_t* DataStruct) {
 	temp = (data[0] << 8 | data[1]);
 	DataStruct->Temperature = (float)((int16_t)temp / (float)340.0 + (float)36.53);
 	
-	/* Get time */
-	DataStruct->Time = getTime();
+//	/* Get time */
+//	DataStruct->Time = getTime();
 	
 	/* Return OK */
 	return TM_MPU6050_Result_Ok;
@@ -175,7 +175,7 @@ TM_MPU6050_Result_t TM_MPU6050_ReadAll(TM_MPU6050_t* DataStruct, MpuDataDef* mpu
 	mpu_data->Gyroscope_Z = (int16_t)(data[12] << 8 | data[13]);
 
 	/* Get time */
-	mpu_data->date = getTime() & 0x7fff;
+//	mpu_data->date = getTime() & 0x7fff;
 	
 	/* Return OK */
 	return TM_MPU6050_Result_Ok;
