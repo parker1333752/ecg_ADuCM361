@@ -26,7 +26,10 @@ _PoolDef(P_ADCVALUE, Q_ADCVALUE_SIZE, AdcValueDef);
 static enum AdcDataType current_adc_type;
 int32_t adc0_data;
 
-volatile EcgDataDef ecg_frame = {0,0,0};
+#define FRAME_BUFFER_SIZE 10
+//volatile EcgDataDef ecg_frame = {0,0,0};
+int ecg_frame_buffer_count;
+EcgDataDef ecg_fram_buffer[FRAME_BUFFER_SIZE] = {{0,0,0}};
 
 // sampling ECG signal
 void Thread_adc (void const *argument)
@@ -39,8 +42,6 @@ void Thread_adc (void const *argument)
 
 	ADC1_init();
 	ADC0_init();
-	ecg_frame.ecg_data = 0;
-	ecg_frame.hs_data = 0;
 	
 	// Create message queue.
 	Q_ADCVALUE = osMessageCreate(osMessageQ(Q_ADCVALUE), NULL);
@@ -56,29 +57,35 @@ void Thread_adc (void const *argument)
 
 	// store starting tick count.
 	resetCurrentCount_Timer1();
+	ecg_frame_buffer_count = 0;
 	while(1) {
 		os_result = osMessageGet(Q_ADCVALUE, osWaitForever);
 		if(os_result.status == osEventMessage){
 			pdata = (AdcValueDef*)os_result.value.v;
-			ecg_frame.date = pdata->date;
+			ecg_fram_buffer[ecg_frame_buffer_count].date = pdata->date;
 			if(pdata->type == ecg){
 				//ecg_frame.ecg_data = ECG_ADC_TO_VOLTAGE * pdata->adc / MAX_ECG_ADC_VALUE;
-				ecg_frame.ecg_data = pdata->adc;
-				ecg_frame.hs_data = pdata->adc0;
+				ecg_fram_buffer[ecg_frame_buffer_count].ecg_data = pdata->adc;
+				ecg_fram_buffer[ecg_frame_buffer_count].hs_data = pdata->adc0;
 			} else if (pdata->type == hs){
 				//ecg_frame.hs_data = HS_ADC_TO_VOLTAGE * pdata->adc / MAX_HS_ADC_VALUE;
-				ecg_frame.hs_data = pdata->adc;
-				ecg_frame.ecg_data = pdata->adc0;
+				ecg_fram_buffer[ecg_frame_buffer_count].hs_data = pdata->adc;
+				ecg_fram_buffer[ecg_frame_buffer_count].ecg_data = pdata->adc0;
 			}
 			mpu_data = popNewestMPUforExt();
-			ecg_frame.Accelerometer_X = mpu_data->Accelerometer_X;
-			ecg_frame.Accelerometer_Y = mpu_data->Accelerometer_Y;
-			ecg_frame.Accelerometer_Z = mpu_data->Accelerometer_Z;
-			ecg_frame.Gyroscope_X = mpu_data->Gyroscope_X;
-			ecg_frame.Gyroscope_Y = mpu_data->Gyroscope_Y;
-			ecg_frame.Gyroscope_Z = mpu_data->Gyroscope_Z;
-
-			UART_Write_Frame(0x01, sizeof(EcgDataDef), (void*)&ecg_frame);
+			ecg_fram_buffer[ecg_frame_buffer_count].Accelerometer_X = mpu_data->Accelerometer_X;
+			ecg_fram_buffer[ecg_frame_buffer_count].Accelerometer_Y = mpu_data->Accelerometer_Y;
+			ecg_fram_buffer[ecg_frame_buffer_count].Accelerometer_Z = mpu_data->Accelerometer_Z;
+			ecg_fram_buffer[ecg_frame_buffer_count].Gyroscope_X = mpu_data->Gyroscope_X;
+			ecg_fram_buffer[ecg_frame_buffer_count].Gyroscope_Y = mpu_data->Gyroscope_Y;
+			ecg_fram_buffer[ecg_frame_buffer_count].Gyroscope_Z = mpu_data->Gyroscope_Z;
+			
+			if(ecg_frame_buffer_count == FRAME_BUFFER_SIZE-1){
+				UART_Write_Frame(0x01, sizeof(EcgDataDef) * FRAME_BUFFER_SIZE, (void*)&ecg_fram_buffer);
+				ecg_frame_buffer_count = 0;
+			}else{
+				ecg_frame_buffer_count += 1;
+			}
 		}
 	}
 }
