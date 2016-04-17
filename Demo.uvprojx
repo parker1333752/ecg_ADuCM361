@@ -361,7 +361,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\src;.\common;.\src\threads</IncludePath>
+              <IncludePath>.\src;.\common;.\src\threads;.\src\eMPL</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -479,11 +479,6 @@
               <FileType>1</FileType>
               <FilePath>.\src\adc0.c</FilePath>
             </File>
-            <File>
-              <FileName>mpu6050.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\mpu6050.c</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
@@ -577,6 +572,21 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>inv_mpu</GroupName>
+          <Files>
+            <File>
+              <FileName>inv_mpu.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\eMPL\inv_mpu.c</FilePath>
+            </File>
+            <File>
+              <FileName>inv_mpu_dmp_motion_driver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\eMPL\inv_mpu_dmp_motion_driver.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>::CMSIS</GroupName>
           <Files>
             <File>
@@ -612,7 +622,7 @@
 
   <RTE>
     <apis>
-      <api Capiversion="1.0" Cclass="CMSIS" Cgroup="RTOS" Cvendor="ARM" exclusive="0">
+      <api Capiversion="1.0" Cclass="CMSIS" Cgroup="RTOS" exclusive="0">
         <package name="CMSIS" schemaVersion="1.0" url="http://www.keil.com/pack/" vendor="ARM" version="3.20.4"/>
         <targetInfos>
           <targetInfo name="Version1.0"/>

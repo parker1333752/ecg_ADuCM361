@@ -31,11 +31,11 @@ void I2C_init(void)
 uint8_t I2C_read(int addr, int reg)
 {
 	uint8_t data;
-	I2C_readMulti(addr,reg,&data,1);
+	I2C_readMulti(addr,reg,1,&data);
 	return data;
 }
 
-void I2C_readMulti(int addr, int reg, uint8_t* data, int bytesCount)
+uint8_t I2C_readMulti(uint8_t addr,uint8_t reg,uint8_t bytesCount,uint8_t *data)
 {
 	volatile int status;
 	int i;
@@ -53,6 +53,7 @@ void I2C_readMulti(int addr, int reg, uint8_t* data, int bytesCount)
 	for(i = 0;i<bytesCount;++i){
 		data[i] = rxbuffer.data[i];
 	}
+	return 0;
 }
 
 // This function can't run concurrently with I2C_read;
@@ -67,6 +68,14 @@ void I2C_write(int addr, int reg, int data)
 	osSignalWait(SIG_I2C_TXRX_COMPLETE, osWaitForever);
 }
 
+uint8_t I2C_writeMulti(uint8_t addr,uint8_t reg,uint8_t len,uint8_t *buf)
+{
+	int i;
+	for(i=0;i<len;++i){
+		I2C_write(addr, reg+i, *(buf+i));
+	}
+	return 0;
+}
 //int32_t getTime(){
 //	return getCurrentCount_Timer1();
 //}

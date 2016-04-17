@@ -19,7 +19,8 @@ typedef struct{
 void I2C_init(void);
 
 uint8_t I2C_read(int addr, int reg);
-void I2C_readMulti(int addr, int reg, uint8_t* data, int bytesCount);
+uint8_t I2C_readMulti(uint8_t addr,uint8_t reg,uint8_t bytesCount,uint8_t *data);
+uint8_t I2C_writeMulti(uint8_t addr,uint8_t reg,uint8_t len,uint8_t *buf);
 void I2C_write(int addr, int reg, int data);
 int32_t getTime(void);
 

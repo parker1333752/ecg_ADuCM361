@@ -81,7 +81,7 @@ void Thread_adc (void const *argument)
 			ecg_fram_buffer[ecg_frame_buffer_count].Gyroscope_Z = mpu_data->Gyroscope_Z;
 			
 			if(ecg_frame_buffer_count == FRAME_BUFFER_SIZE-1){
-				UART_Write_Frame(0x01, sizeof(EcgDataDef) * FRAME_BUFFER_SIZE, (void*)&ecg_fram_buffer);
+//				UART_Write_Frame(0x01, sizeof(EcgDataDef) * FRAME_BUFFER_SIZE, (void*)&ecg_fram_buffer);
 				ecg_frame_buffer_count = 0;
 			}else{
 				ecg_frame_buffer_count += 1;

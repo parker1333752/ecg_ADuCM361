@@ -1,10 +1,14 @@
 #include "thread_i2c.h"
-#include "mpu6050.h"
+//#include "mpu6050.h"
 #include "I2cLib.h"
+#include "i2c.h"
 #include "thread_uart.h"
 #include "timer.h"
 #include "stdlib.h"
 #include "string.h"
+
+#include "inv_mpu.h"
+#include "inv_mpu_dmp_motion_driver.h"
 
 extern volatile uint8_t i2c_rx_data;
 extern I2cRxTxBufferDef txbuffer;
@@ -13,7 +17,7 @@ osThreadId tid_Thread_i2c;
 
 volatile int init_result;
 osEvent os_result;
-TM_MPU6050_t data;
+//TM_MPU6050_t data;
 int32_t time;
 
 int MPUcpy(MpuDataDef *source ,MpuDataDef *dest){
@@ -98,23 +102,60 @@ MpuDataDef* popNewestMPUforExt(void){
 	return popNewestMPU(PMpuDataQueue);
 }
 
-void Thread_i2c (void const *argument) {
-	MpuDataDef mpu_data;
+//void Thread_i2c (void const *argument) {
+//	MpuDataDef mpu_data;
 
-	while(TM_MPU6050_Result_Ok != TM_MPU6050_Init(&data,TM_MPU6050_Device_0,TM_MPU6050_Accelerometer_8G,TM_MPU6050_Gyroscope_250s)){
-		return;
-	}
+//	while(TM_MPU6050_Result_Ok != TM_MPU6050_Init(&data,TM_MPU6050_Device_0,TM_MPU6050_Accelerometer_8G,TM_MPU6050_Gyroscope_250s)){
+//		return;
+//	}
+//	
+//	initQMPU(PMpuDataQueue);
+//	initQueueLock(&mpu_queue_lock);
+//	
+//	while(1) {
+////		if(TM_MPU6050_ReadSta(&data, DATA_RDY_INT)){
+//			osDelay(1);
+//			TM_MPU6050_ReadAll(&data, &mpu_data);
+//			pushQMPU(PMpuDataQueue, &mpu_data);
+////			UART_Write_Frame(0x02, sizeof(MpuDataDef), &mpu_data);
+////		}
+//	}
+//}
+void Thread_i2c (void const *argument) {
+	unsigned long sensor_timestamp;
+	short gyro[3], accel[3], sensors;
+	long quat[4]; 
+	short cur_sensors;
+	MpuDataDef mpu_data;
 	
-	initQMPU(PMpuDataQueue);
-	initQueueLock(&mpu_queue_lock);
-	
+	mpu_dmp_init();
+	cur_sensors = 0;
 	while(1) {
-//		if(TM_MPU6050_ReadSta(&data, DATA_RDY_INT)){
-			osDelay(1);
-			TM_MPU6050_ReadAll(&data, &mpu_data);
-			pushQMPU(PMpuDataQueue, &mpu_data);
-//			UART_Write_Frame(0x02, sizeof(MpuDataDef), &mpu_data);
-//		}
+		if(!mpu_dmp_get_data_raw(gyro, accel, quat, &sensor_timestamp, &sensors)){
+			if(sensors & INV_XYZ_GYRO){
+				cur_sensors |= INV_XYZ_GYRO;
+			}else if(sensors & INV_XYZ_ACCEL){
+				cur_sensors |= INV_XYZ_ACCEL;
+			}else if(sensors & INV_WXYZ_QUAT){
+				cur_sensors |= INV_WXYZ_QUAT;
+			}
+			if(cur_sensors == (INV_XYZ_GYRO|INV_XYZ_ACCEL|INV_WXYZ_QUAT)){
+				cur_sensors = 0;
+				mpu_data.Accelerometer_X = accel[0];
+				mpu_data.Accelerometer_Y = accel[1];
+				mpu_data.Accelerometer_Z = accel[2];
+				mpu_data.Gyroscope_X = gyro[0];
+				mpu_data.Gyroscope_Y = gyro[1];
+				mpu_data.Gyroscope_Z = gyro[2];
+				mpu_data.Quat[0] = quat[0];
+				mpu_data.Quat[1] = quat[1];
+				mpu_data.Quat[2] = quat[2];
+				mpu_data.Quat[3] = quat[3];
+				mpu_data.date = sensor_timestamp;
+				UART_Write_Frame(0x02, sizeof(MpuDataDef), &mpu_data);
+//				pushQMPU(PMpuDataQueue, &mpu_data);
+			}
+		}
 	}
 }
 
